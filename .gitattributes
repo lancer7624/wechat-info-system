@@ -1,0 +1,4 @@
+# Windows 批处理 / PowerShell 脚本：原样保留字节（CRLF + GBK 编码），禁止行尾与编码转换
+*.bat -text
+*.ps1 -text
+*.cmd -text

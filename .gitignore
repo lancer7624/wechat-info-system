@@ -1,0 +1,26 @@
+# 密钥与个人配置（绝不入库）
+config.json
+db_key.json
+image_key.json
+wechat-export/db_key.json
+wechat-export/image_key.json
+
+# 私人聊天数据与运行产物
+wechat-export/export/
+wechat-export/logs/
+kanban/data.json
+待审/
+待入库/
+
+# 用户自己的规则/行程（从模板复制而来，可能含私人内容）
+分类规则.md
+行程表.md
+
+# 运行日志与状态
+*.log
+analysis_watermark.json
+trip_watermark.json
+
+# Python 缓存
+__pycache__/
+*.pyc

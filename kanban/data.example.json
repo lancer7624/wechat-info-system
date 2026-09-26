@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "today": {
+    "date": "",
+    "ts": "",
+    "brief": {
+      "群聊": [
+        {
+          "source": "示例群A",
+          "points": [
+            {
+              "text": "示例：群里分享了某工具的新版本和用法要点",
+              "time": "12:34",
+              "source": "示例群A",
+              "category": "📚",
+              "detail": "起因：…\n经过：…\n结果：…",
+              "quotes": ["原文逐字引用"],
+              "link": ""
+            }
+          ]
+        }
+      ],
+      "公众号": [
+        {
+          "source": "示例学校公众号A",
+          "points": [
+            {
+              "text": "示例：推送的报名通知要点",
+              "time": "08:00",
+              "source": "示例学校公众号A",
+              "category": "📢",
+              "quotes": ["原文逐字引用"],
+              "link": "https://mp.weixin.qq.com/s/示例"
+            }
+          ]
+        }
+      ]
+    },
+    "notify": [
+      {
+        "text": "示例：今晚月会，各负责人通知到位",
+        "time": "12:38",
+        "source": "示例群A",
+        "category": "📢",
+        "detail": "起因：…\n经过：…\n结果：…",
+        "quotes": ["原文逐字引用"],
+        "link": ""
+      }
+    ],
+    "brief_chat": [],
+    "brief_mp": [],
+    "activities_new": [
+      {
+        "title": "示例：体育选课重选",
+        "time": "12:57",
+        "place": "校区不明",
+        "source": "示例群B",
+        "status": "待办",
+        "importance": 2,
+        "detail": "起因：…\n经过：…\n结果：…",
+        "quotes": ["原文逐字引用"],
+        "campus": "校区不明"
+      }
+    ],
+    "schedule": [
+      {
+        "date": "",
+        "items": [
+          {
+            "title": "示例：班会",
+            "time": "19:30",
+            "status": "已确认",
+            "detail": "起因：…\n经过：…\n结果：…"
+          }
+        ]
+      }
+    ],
+    "review": { "user": "", "ai": "" },
+    "voice": []
+  },
+  "history": [],
+  "archive": {}
+}

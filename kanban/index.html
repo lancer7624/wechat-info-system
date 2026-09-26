@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>微信信息看板</title>
+<style>
+  :root{
+    --bg:#f7f8fa;
+    --card-bg:#ffffff;
+    --text:#24292f;
+    --text-muted:#6b7280;
+    --border:#e6e8ee;
+    --accent:#3b82f6;
+    --accent-soft:#eaf1ff;
+    --green:#16a34a;
+    --amber:#d97706;
+    --red:#dc2626;
+    --gray:#9ca3af;
+    --radius:12px;
+    --shadow:0 1px 2px rgba(16,24,40,.04),0 1px 3px rgba(16,24,40,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- 顶部栏 ---------- */
+  .topbar{
+    position:sticky;top:0;z-index:20;
+    background:rgba(255,255,255,.92);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--border);
+  }
+  .topbar-inner{
+    max-width:1080px;margin:0 auto;padding:16px 24px 8px;
+    display:flex;align-items:flex-start;justify-content:space-between;
+    flex-wrap:wrap;gap:10px;
+  }
+  .brand h1{font-size:22px;font-weight:700;letter-spacing:.5px}
+  .greeting{color:var(--text-muted);font-size:13px;margin-top:2px}
+  .source-note{max-width:1080px;margin:0 auto;padding:0 24px 8px;font-size:12px;color:var(--text-muted)}
+  .source-note.warn{color:var(--amber)}
+  .date-nav{
+    max-width:1080px;margin:0 auto;padding:0 24px 16px;
+    display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;
+  }
+  .date-nav::-webkit-scrollbar{display:none}
+
+  /* ---------- 按钮 ---------- */
+  .btn{
+    border:1px solid var(--border);background:#fff;color:var(--text);
+    border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;font-family:inherit;
+    transition:.15s;white-space:nowrap;
+  }
+  .btn:hover{border-color:var(--accent);color:var(--accent)}
+  .btn-casual{border-color:#f59e0b;color:#b45309;background:#fff8ef}
+  .btn-casual:hover{border-color:#f59e0b;color:#b45309}
+  .btn-ghost{background:#fff;border-color:#dbe7ff;color:var(--accent);padding:6px 12px;margin-left:auto}
+  .btn-ghost:hover{background:var(--accent-soft);color:var(--accent)}
+
+  .pill{
+    flex:none;border:1px solid var(--border);background:#fff;color:var(--text-muted);
+    border-radius:999px;padding:6px 14px;font-size:13px;cursor:pointer;font-family:inherit;transition:.15s;
+  }
+  .pill:hover{border-color:var(--accent);color:var(--accent)}
+  .pill.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  .pill-ts{font-size:11px;opacity:.75;margin-left:4px}
+  .pill.active .pill-ts{opacity:.9}
+
+  /* ---------- 主体 ---------- */
+  .content{max-width:1080px;margin:0 auto;padding:24px}
+  section{margin-bottom:32px}
+  .section-title{
+    font-size:17px;font-weight:700;margin-bottom:14px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .section-title::before{content:'';width:4px;height:18px;background:var(--accent);border-radius:2px}
+
+  .view-banner{
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    background:var(--accent-soft);border:1px solid #dbe7ff;color:var(--accent);
+    border-radius:var(--radius);padding:10px 16px;margin-bottom:22px;font-size:14px;
+  }
+  .view-weekday{color:var(--text-muted)}
+
+  .card{
+    background:var(--card-bg);border:1px solid var(--border);
+    border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);
+  }
+  .card-title{font-weight:600;font-size:15px;margin-bottom:10px}
+  .empty{color:var(--text-muted);font-size:14px;padding:8px 0}
+  .empty-card{padding:20px}
+
+  .brief-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:680px){.brief-grid{grid-template-columns:1fr}}
+  .brief-source{font-weight:600;font-size:14px;margin-bottom:8px;color:var(--accent)}
+  .brief-points{list-style:none}
+  .brief-points li{padding:4px 0 4px 18px;position:relative;font-size:14px}
+  .brief-points li::before{content:'•';position:absolute;left:4px;color:var(--accent)}
+
+  .tl-date{font-weight:700;font-size:14px;margin:18px 0 8px;display:flex;gap:8px;align-items:center}
+  .tl-date:first-child{margin-top:0}
+  .tl-weekday{color:var(--text-muted);font-weight:400;font-size:12px}
+  .tl-group{position:relative;padding-left:22px}
+  .tl-group::before{content:'';position:absolute;left:8px;top:8px;bottom:8px;width:2px;background:var(--border)}
+  .tl-item{
+    display:flex;align-items:flex-start;gap:12px;
+    background:var(--card-bg);border:1px solid var(--border);
+    border-radius:var(--radius);padding:12px 14px;margin-bottom:10px;box-shadow:var(--shadow);
+  }
+  .tl-time{min-width:52px;font-weight:600;font-size:14px;color:var(--accent)}
+  .tl-dot{width:10px;height:10px;border-radius:50%;background:var(--gray);margin-top:6px;flex:none}
+  .tl-dot.st-confirmed{background:var(--green)}
+  .tl-dot.st-done{background:var(--accent)}
+  .tl-dot.st-cancel{background:var(--red)}
+  .tl-dot.st-pending{background:var(--amber)}
+  .tl-body{flex:1;min-width:0}
+  .tl-title{font-weight:600;font-size:15px}
+  .tl-meta{color:var(--text-muted);font-size:12px;display:flex;flex-wrap:wrap;gap:12px;margin-top:4px}
+  .tl-side{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+
+  .notify-cat{
+    flex:none;font-size:13px;margin-top:1px;
+    padding:1px 8px;border-radius:999px;white-space:nowrap;
+    background:var(--accent-soft);color:var(--accent);font-weight:600;
+  }
+  .notify-group{
+    font-weight:700;font-size:14px;margin:18px 0 8px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .notify-group:first-child{margin-top:0}
+  .notify-group .ng-count{
+    font-weight:400;font-size:12px;color:var(--text-muted);
+    background:var(--border);padding:1px 8px;border-radius:999px;
+  }
+
+  .stars{font-size:13px;letter-spacing:1px;white-space:nowrap;color:#f59e0b}
+  .tag{font-size:12px;padding:2px 8px;border-radius:999px;background:#f1f3f7;color:var(--text-muted);white-space:nowrap}
+  .tag.st-confirmed{background:#e7f6ec;color:var(--green)}
+  .tag.st-pending{background:#fdf3e3;color:var(--amber)}
+  .tag.st-done{background:#eaf1ff;color:var(--accent)}
+  .tag.st-cancel{background:#fdeaea;color:var(--red)}
+
+  .act-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+  .act-card{display:flex;flex-direction:column}
+  .act-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+  .act-title{font-weight:600;font-size:15px}
+  .act-meta{color:var(--text-muted);font-size:13px;display:flex;gap:12px;margin-top:6px;flex-wrap:wrap}
+  .act-foot{
+    margin-top:auto;padding-top:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;
+    border-top:1px solid var(--border);
+  }
+  .act-source{color:var(--text-muted);font-size:12px}
+
+  .review-text{padding:12px 14px;border-radius:8px;font-size:14px;white-space:pre-wrap;margin-bottom:10px}
+  .review-text.user{background:#f6f8fc}
+  .review-text.ai{background:#f0f7f2}
+  .review-input{width:100%;min-height:120px;box-sizing:border-box;padding:10px 12px;border:1px solid #c9d1de;border-radius:8px;font:inherit;font-size:14px;background:transparent;color:inherit;resize:vertical;margin-bottom:8px}
+  .review-input:focus{outline:2px solid #4a90d9;border-color:transparent}
+  .voice-item{padding:10px 0;border-bottom:1px solid var(--border)}
+  .voice-item:last-child{border-bottom:none}
+  .voice-head{display:flex;justify-content:space-between;margin-bottom:6px}
+  .voice-note{font-size:13px;color:var(--text)}
+  .voice-time{font-size:12px;color:var(--text-muted)}
+  .voice-item audio{width:100%}
+  .voice-transcript{margin-top:6px;font-size:13px}
+  .voice-transcript summary{cursor:pointer;color:var(--text-muted);font-size:12px;user-select:none}
+  .voice-transcript div{
+    margin-top:6px;padding:10px 12px;background:#f6f8fc;border-radius:8px;
+    white-space:pre-wrap;word-break:break-all;color:var(--text);
+  }
+
+  /* ---------- 录音控制条 ---------- */
+  .rec-bar{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+  #recBtn{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  #recBtn:hover{background:#2b6fe0;border-color:#2b6fe0;color:#fff}
+  #recBtn.recording{background:var(--red);border-color:var(--red);animation:recpulse 1.2s infinite}
+  @keyframes recpulse{
+    0%{box-shadow:0 0 0 0 rgba(220,38,38,.4)}
+    100%{box-shadow:0 0 0 10px rgba(220,38,38,0)}
+  }
+  .rec-status{font-size:13px;color:var(--text-muted)}
+  .rec-last{
+    margin-top:10px;padding:10px 12px;background:#f6f8fc;border-radius:8px;
+    font-size:13px;color:var(--text);white-space:pre-wrap;word-break:break-all;
+  }
+
+  .footer{max-width:1080px;margin:0 auto;padding:0 24px 40px;color:var(--text-muted);font-size:12px;text-align:center}
+
+  /* ---------- 详情浮窗 ---------- */
+  .p-clickable{cursor:pointer;transition:.15s}
+  .p-clickable:hover{color:var(--accent)}
+  .p-more{color:var(--gray);font-size:12px;margin-left:6px;white-space:nowrap}
+  .p-clickable:hover .p-more{color:var(--accent)}
+  .tl-item.clickable:hover,.act-card.clickable:hover{border-color:var(--accent);box-shadow:0 2px 8px rgba(59,130,246,.12)}
+  .modal-overlay{
+    position:fixed;inset:0;z-index:100;background:rgba(15,23,42,.45);
+    display:none;align-items:center;justify-content:center;padding:20px;
+  }
+  .modal-overlay.open{display:flex}
+  .modal-card{
+    background:var(--card-bg);border-radius:14px;max-width:640px;width:100%;
+    max-height:82vh;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,.2);animation:modalin .18s ease;
+  }
+  @keyframes modalin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:18px 22px 0}
+  .modal-title{font-size:17px;font-weight:700;line-height:1.5}
+  .modal-close{
+    flex:none;border:none;background:transparent;color:var(--text-muted);
+    font-size:18px;cursor:pointer;padding:4px 8px;border-radius:6px;line-height:1;
+  }
+  .modal-close:hover{background:#f1f3f7;color:var(--text)}
+  .modal-meta{display:flex;flex-wrap:wrap;gap:12px;padding:6px 22px 0;color:var(--text-muted);font-size:12.5px}
+  .modal-detail{padding:14px 22px 4px;font-size:14px;line-height:1.75;white-space:pre-line}
+  .modal-quotes{padding:10px 22px 16px}
+  .modal-quotes .q-label{font-size:12px;color:var(--text-muted);margin:6px 0 8px}
+  .modal-quotes blockquote{
+    margin:0 0 8px;padding:8px 12px;border-left:3px solid var(--accent);
+    background:#f6f8fc;border-radius:0 8px 8px 0;font-size:13.5px;color:var(--text);line-height:1.65;
+  }
+  .modal-link{padding:0 22px 18px;font-size:13px}
+  .modal-link a{color:var(--accent);word-break:break-all}
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <h1 id="appTitle">微信信息看板</h1>
+        <div id="greeting" class="greeting"></div>
+      </div>
+      <button id="styleBtn" class="btn">风格：正经</button>
+    </div>
+    <div id="sourceNote" class="source-note" style="display:none"></div>
+    <nav id="dateNav" class="date-nav"></nav>
+  </header>
+
+  <main id="content" class="content"></main>
+
+  <footer class="footer">数据由系统每日自动更新 · 看板页面仅做展示</footer>
+
+  <div id="detailModal" class="modal-overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div class="modal-title" id="modalTitle"></div>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-meta" id="modalMeta"></div>
+      <div class="modal-detail" id="modalDetail"></div>
+      <div class="modal-quotes" id="modalQuotes"></div>
+      <div class="modal-link" id="modalLink"></div>
+    </div>
+  </div>
+
+<script>
+/* ================= 内置示例数据（仅当通过 file:// 双击打开、无法读取同目录 JSON 时回退使用） ================= */
+/* ================= 内置空数据（仅 file:// 双击打开、读不到 data.json 时回退；真实数据始终以 data.json 为准） ================= */
+const EMBEDDED_DEMO = {
+  "version": 1,
+  "today": {
+    "date": "2026-09-08",
+    "brief": { "群聊": [], "公众号": [] },
+    "activities_new": [],
+    "schedule": [],
+    "review": { "user": "", "ai": "" },
+    "voice": []
+  },
+  "history": [],
+  "archive": {}
+};
+
+/* ================= 风格文案包 ================= */
+const STYLES = {
+  plain: {
+    appTitle: '微信信息看板',
+    greeting: '欢迎使用你的每日信息看板。',
+    viewPrefix: '正在查看',
+    backToday: '回到今天',
+    sectionNotify: '📢 需要通知的事',
+    sectionBrief: '今日简报',
+    sectionTimeline: '行程时间轴',
+    sectionActivities: '新增活动',
+    sectionReview: '睡前复盘',
+    labelToday: '今天',
+    briefChat: '群聊',
+    briefMp: '公众号',
+    emptyBrief: '今天暂无简报内容。',
+    emptyTimeline: '近几日暂无行程安排。',
+    emptyActivities: '暂无新增活动。',
+    emptyReview: '暂无复盘记录。',
+    reviewUser: '用户复盘',
+    reviewAi: 'AI 复盘',
+    voiceTitle: '语音想法',
+    emptyVoice: '暂无语音记录。',
+    emptyArchive: '该日期暂无归档数据。',
+    colSource: '来源',
+    dataTip: '当前显示的是空数据页。请用「打开看板.bat」打开本页面（http://127.0.0.1:8710/）查看真实数据。'
+  },
+  casual: {
+    appTitle: '今天有啥事儿？',
+    greeting: '嘿，打开看看今天有啥要忙的。',
+    viewPrefix: '你正在看',
+    backToday: '回今天',
+    sectionNotify: '📢 当时该弹给你的事',
+    sectionBrief: '今日速报',
+    sectionTimeline: '行程时间轴',
+    sectionActivities: '新增活动',
+    sectionReview: '睡前复盘',
+    labelToday: '今天',
+    briefChat: '群里说',
+    briefMp: '公众号消息',
+    emptyBrief: '今天群里和公众号都很安静～',
+    emptyTimeline: '这几天没啥安排，舒服！',
+    emptyActivities: '木有新活动啦。',
+    emptyReview: '今天还没写复盘哦。',
+    reviewUser: '你自己写的',
+    reviewAi: 'AI 帮你复盘',
+    voiceTitle: '语音想法',
+    emptyVoice: '没有录音。',
+    emptyArchive: '这天没数据诶。',
+    colSource: '来自',
+    dataTip: '小提示：现在显示的是空数据。用「打开看板.bat」打开（http://127.0.0.1:8710/）才能看到真实数据～'
+  },
+  seagull: {
+    appTitle: '老子的信息看板',
+    greeting: '哟，废物来了？自己瞅，老子筛过了。',
+    viewPrefix: '在看',
+    backToday: '滚回今天',
+    sectionNotify: '📢 该弹给你的事',
+    sectionBrief: '今日简报',
+    sectionTimeline: '行程时间轴',
+    sectionActivities: '新蹦出来的活动',
+    sectionReview: '睡前复盘',
+    labelToday: '今天',
+    briefChat: '群里BB的',
+    briefMp: '公众号发的',
+    emptyBrief: '今天屁都没一条。',
+    emptyTimeline: '近期没啥安排，躺平吧。',
+    emptyActivities: '没有新活动，废物。',
+    emptyReview: '复盘还没写，别装死。',
+    reviewUser: '你自己写的',
+    reviewAi: '老子帮你复盘',
+    voiceTitle: '语音想法',
+    emptyVoice: '没录过音，嗓子废了？',
+    emptyArchive: '这天没数据。',
+    colSource: '来源',
+    dataTip: '空数据页。用「打开看板.bat」打开，别他妈直接双击 index.html！'
+  }
+};
+
+/* ================= 应用状态 ================= */
+const STYLE_KEY = 'kb_style';
+const state = { data: null, viewDate: null, style: 'plain', editingReview: false };
+
+/* ================= 详情浮窗 ================= */
+let detailRegistry = [];
+function regDetail(obj){ detailRegistry.push(obj); return detailRegistry.length - 1; }
+function openModalFrom(el){
+  const i = Number(el.getAttribute('data-idx'));
+  if (!isNaN(i) && detailRegistry[i]) openModal(detailRegistry[i]);
+}
+function openModal(d){
+  const t = STYLES[state.style];
+  document.getElementById('modalTitle').textContent = d.title || '';
+  let meta = [];
+  if (d.source) meta.push(esc(t.colSource) + '：' + esc(d.source));
+  if (d.time) meta.push('🕐 ' + esc(d.time));
+  document.getElementById('modalMeta').innerHTML = meta.join(' &nbsp;·&nbsp; ') || '';
+  document.getElementById('modalDetail').textContent = d.detail || '暂无详情。';
+  const qBox = document.getElementById('modalQuotes');
+  if (Array.isArray(d.quotes) && d.quotes.length){
+    qBox.innerHTML = '<div class="q-label">💬 群里/推文原话：</div>'
+      + d.quotes.map(q => '<blockquote>' + esc(q) + '</blockquote>').join('');
+    qBox.style.display = '';
+  } else {
+    qBox.style.display = 'none';
+  }
+  const lBox = document.getElementById('modalLink');
+  if (d.link){
+    lBox.innerHTML = '🔗 <a href="' + esc(d.link) + '" target="_blank" rel="noopener">' + esc(d.link) + '</a>';
+    lBox.style.display = '';
+  } else {
+    lBox.style.display = 'none';
+  }
+  document.getElementById('detailModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(){
+  document.getElementById('detailModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+/* ================= 通用工具 ================= */
+function esc(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function deepCopy(o){ return JSON.parse(JSON.stringify(o)); }
+function stars(n){
+  n = Number(n) || 0;
+  if (n >= 3) return '⭐⭐⭐';
+  if (n === 2) return '⭐⭐';
+  return '⭐';
+}
+function statusClass(s){
+  switch(s){
+    case '已确认': return 'st-confirmed';
+    case '已完成': return 'st-done';
+    case '已取消': return 'st-cancel';
+    default: return 'st-pending'; /* 待定 及未知状态 */
+  }
+}
+function fmtTime(v){
+  if (v == null) return '';
+  v = String(v);
+  if (v.indexOf(' ') >= 0) return v.split(' ').pop();
+  return v;
+}
+function weekday(dateStr){
+  const d = new Date(dateStr + 'T00:00:00');
+  if (isNaN(d.getTime())) return '';
+  return '周' + '日一二三四五六'[d.getDay()];
+}
+function emptyInner(msg){ return '<div class="empty">' + esc(msg) + '</div>'; }
+function emptyCard(msg){ return '<div class="card empty-card">' + emptyInner(msg) + '</div>'; }
+function sectionBlock(title, body){ return '<div class="card"><div class="card-title">' + esc(title) + '</div>' + body + '</div>'; }
+function sectionHeader(title){ return '<h2 class="section-title">' + esc(title) + '</h2>'; }
+
+/* ================= 数据获取 ================= */
+async function fetchJson(url){
+  const r = await fetch(url, { cache: 'no-store' });
+  if (!r.ok) throw new Error(String(r.status));
+  return r.json();
+}
+async function loadData(){
+  if (location.protocol === 'file:'){
+    // file:// 下浏览器无法读取同目录 JSON（CORS 限制），直接用内置示例数据，保证双击可看且无控制台报错
+    return { data: deepCopy(EMBEDDED_DEMO), source: 'embedded' };
+  }
+  try { return { data: await fetchJson('./data.json'), source: 'data.json' }; } catch(e){}
+  try { return { data: await fetchJson('./demo_data.json'), source: 'demo_data.json' }; } catch(e){}
+  return { data: deepCopy(EMBEDDED_DEMO), source: 'embedded' };
+}
+
+/* ================= 渲染 ================= */
+function getDates(){
+  const d = state.data;
+  const hist = Array.isArray(d.history) ? d.history : [];
+  const seen = new Set(); const out = [];
+  [d.today.date].concat(hist).forEach(x => { if (x && !seen.has(x)){ seen.add(x); out.push(x); } });
+  return out;
+}
+
+function currentView(){
+  const d = state.data;
+  if (state.viewDate === d.today.date) return d.today;
+  const hist = d.archive && d.archive[state.viewDate];
+  return hist || null;
+}
+
+function renderBrief(brief, t){
+  const order = ['群聊','公众号'];
+  const blocks = [];
+  for (const key of order){
+    const arr = brief && brief[key];
+    if (Array.isArray(arr) && arr.length){
+      let inner = '';
+      for (const src of arr){
+        const pts = Array.isArray(src.points) ? src.points : [];
+        inner += '<div class="brief-src"><div class="brief-source">' + esc(src.source || '未知来源') + '</div>'
+              + '<ul class="brief-points">' + pts.map(p => {
+                if (p && typeof p === 'object'){
+                  const i = regDetail({
+                    title: p.text || '',
+                    source: src.source,
+                    time: p.time || '',
+                    detail: p.detail || '',
+                    quotes: p.quotes || [],
+                    link: p.link || ''
+                  });
+                  return '<li class="p-clickable" data-idx="' + i + '" onclick="openModalFrom(this)">'
+                    + esc(p.text || '') + '<span class="p-more">详情→</span></li>';
+                }
+                return '<li>' + esc(p) + '</li>';
+              }).join('') + '</ul></div>';
+      }
+      blocks.push({ title: key === '群聊' ? t.briefChat : t.briefMp, inner: inner });
+    }
+  }
+  if (!blocks.length) return emptyCard(t.emptyBrief);
+  return '<div class="brief-grid">' + blocks.map(b =>
+    '<div class="card brief-card"><div class="card-title">' + esc(b.title) + '</div>' + b.inner + '</div>'
+  ).join('') + '</div>';
+}
+
+function renderNotify(list, t){
+  const arr = Array.isArray(list) ? list : [];
+  if (!arr.length) return emptyCard(t.emptyBrief);
+  // 按类别分组渲染，平铺 25 条太乱
+  // ⚙️ 按你的群名改这些匹配词（分享版已移除原作者的群名）
+  const groups = [
+    { label: '💰 赚钱相关',      match: ['市场部', '销售'] },
+    { label: '🏫 校园规则与选课', match: ['新生交流群'] },
+    { label: '📢 班群通知',      match: ['学院', '班群', '通知群'] },
+    { label: '🧠 学习与资源',    match: ['AI交流'] },
+    { label: '📮 招新与福利',    match: ['公众号', '招新'] },
+  ];
+  const fallback = '📌 其他';
+  function groupOf(n){
+    const src = n.source || '';
+    for (const g of groups){
+      if (g.match.some(k => src.includes(k))) return g.label;
+    }
+    return fallback;
+  }
+  const order = groups.map(g => g.label).concat([fallback]);
+  const buckets = {};
+  for (const n of arr){
+    const k = groupOf(n);
+    (buckets[k] = buckets[k] || []).push(n);
+  }
+  const keys = order.filter(k => buckets[k] && buckets[k].length);
+  return keys.map(k => {
+    const items = buckets[k];
+    return '<div class="notify-group">' + esc(k)
+      + ' <span class="ng-count">' + items.length + '</span></div>'
+      + items.map(n => {
+        const clickable = n && (n.detail || n.quotes || n.link);
+        const idx = clickable ? regDetail({
+          title: n.text || '',
+          source: n.source || '',
+          time: n.time || '',
+          detail: n.detail || '',
+          quotes: n.quotes || [],
+          link: n.link || ''
+        }) : -1;
+        return '<div class="tl-item' + (clickable ? ' clickable p-clickable' : '') + '"'
+          + (clickable ? ' data-idx="' + idx + '" onclick="openModalFrom(this)"' : '') + '>'
+          + '<div class="tl-time">' + esc(fmtTime(n.time)) + '</div>'
+          + '<div class="notify-cat">' + esc(n.category || '📢') + '</div>'
+          + '<div class="tl-body"><div class="tl-title">' + esc(n.text || '') + '</div>'
+          + '<div class="tl-meta">'
+          + (n.campus ? '<span>🏫 ' + esc(n.campus) + '</span>' : '')
+          + (n.source ? '<span>' + esc(t.colSource) + '：' + esc(n.source) + '</span>' : '')
+          + (clickable ? '<span class="p-more">详情→</span>' : '')
+          + '</div></div></div>';
+      }).join('');
+  }).join('');
+}
+
+function renderTimeline(schedule, t){
+  const items = Array.isArray(schedule) ? schedule : [];
+  if (!items.length) return emptyCard(t.emptyTimeline);
+  const sorted = items.slice().sort((a, b) => String(a.date||'').localeCompare(String(b.date||'')));
+  let html = '';
+  for (const group of sorted){
+    const list = Array.isArray(group.items) ? group.items : [];
+    if (!list.length) continue;
+    html += '<div class="tl-date">' + esc(group.date) + ' <span class="tl-weekday">' + weekday(group.date) + '</span></div>';
+    let itemsHtml = '';
+    for (const it of list){
+      const clickable = it && (it.detail || it.quotes || it.link);
+      const idx = clickable ? regDetail({
+        title: it.title || '',
+        source: it.source || '',
+        time: (group.date || '') + ' ' + (it.time || ''),
+        detail: it.detail || '',
+        quotes: it.quotes || [],
+        link: it.link || ''
+      }) : -1;
+      itemsHtml += '<div class="tl-item' + (clickable ? ' clickable p-clickable' : '') + '"'
+        + (clickable ? ' data-idx="' + idx + '" onclick="openModalFrom(this)"' : '') + '>'
+        + '<div class="tl-time">' + esc(fmtTime(it.time)) + '</div>'
+        + '<div class="tl-dot ' + statusClass(it.status) + '"></div>'
+        + '<div class="tl-body"><div class="tl-title">' + esc(it.title) + '</div>'
+        + '<div class="tl-meta">'
+        + (it.place ? '<span>📍 ' + esc(it.place) + '</span>' : '')
+        + (it.source ? '<span>' + esc(t.colSource) + '：' + esc(it.source) + '</span>' : '')
+        + (clickable ? '<span class="p-more">详情→</span>' : '')
+        + '</div></div>'
+        + '<div class="tl-side">'
+        + '<span class="stars">' + stars(it.importance) + '</span>'
+        + (it.status ? '<span class="tag ' + statusClass(it.status) + '">' + esc(it.status) + '</span>' : '')
+        + '</div></div>';
+    }
+    html += '<div class="tl-group">' + itemsHtml + '</div>';
+  }
+  return html;
+}
+
+function renderActivities(list, t){
+  const arr = Array.isArray(list) ? list : [];
+  if (!arr.length) return emptyCard(t.emptyActivities);
+  return '<div class="act-grid">' + arr.map(a => {
+    const clickable = a && (a.detail || a.quotes || a.link);
+    const idx = clickable ? regDetail({
+      title: a.title || '',
+      source: a.source || '',
+      time: a.time || '',
+      detail: a.detail || '',
+      quotes: a.quotes || [],
+      link: a.link || ''
+    }) : -1;
+    return '<div class="card act-card' + (clickable ? ' clickable p-clickable' : '') + '"'
+    + (clickable ? ' data-idx="' + idx + '" onclick="openModalFrom(this)"' : '') + '>'
+    + '<div class="act-head"><div class="act-title">' + esc(a.title || '未命名活动') + '</div>'
+    + '<span class="stars">' + stars(a.importance) + '</span></div>'
+    + '<div class="act-meta">'
+    + (a.time ? '<span>🕐 ' + esc(fmtTime(a.time)) + '</span>' : '')
+    + (a.place ? '<span>📍 ' + esc(a.place) + '</span>' : '')
+    + (clickable ? '<span class="p-more">详情→</span>' : '')
+    + '</div>'
+    + '<div class="act-foot">'
+    + (a.source ? '<span class="act-source">' + esc(t.colSource) + '：' + esc(a.source) + '</span>' : '')
+    + (a.status ? '<span class="tag ' + statusClass(a.status) + '">' + esc(a.status) + '</span>' : '')
+    + '</div></div>';
+  }).join('') + '</div>';
+}
+
+function renderReview(review, voice, t){
+  const r = review || {};
+  const userTxt = (r.user || '').trim();
+  const aiTxt = (r.ai || '').trim();
+  const v = Array.isArray(voice) ? voice : [];
+  let html = '';
+  // 用户复盘：始终展示卡片，可编辑（自己写）；AI 复盘单独一张卡，只读
+  if (state.editingReview){
+    html += sectionBlock(t.reviewUser,
+      '<textarea id="reviewInput" class="review-input" rows="6" placeholder="写你的反思复盘…">' + esc(r.user || '') + '</textarea>'
+      + '<div class="rec-bar"><button class="btn" onclick="reviewSave()">💾 保存</button>'
+      + '<button class="btn" onclick="reviewCancel()">取消</button></div>');
+  } else if (userTxt){
+    html += sectionBlock(t.reviewUser,
+      '<div class="review-text user">' + esc(userTxt) + '</div>'
+      + '<div class="rec-bar"><button class="btn" onclick="state.editingReview=true;renderAll()">✏️ 编辑</button></div>');
+  } else {
+    html += sectionBlock(t.reviewUser,
+      emptyInner('还没写。点按钮写下你今天的反思复盘，AI 的点评在下面。')
+      + '<div class="rec-bar"><button class="btn" onclick="state.editingReview=true;renderAll()">✏️ 写我的复盘</button></div>');
+  }
+  if (aiTxt) html += sectionBlock(t.reviewAi, '<div class="review-text ai">' + esc(aiTxt) + '</div>');
+  if (v.length){
+    let vh = recBarHtml();
+    vh += '<div class="voice-list">';
+    for (const vo of v){
+      vh += '<div class="voice-item">'
+        + '<div class="voice-head"><span class="voice-note">' + esc(vo.note || '语音想法') + '</span>'
+        + (vo.time ? '<span class="voice-time">' + esc(vo.time) + '</span>' : '') + '</div>'
+        + '<audio controls preload="none" src="' + esc(vo.file || '') + '"></audio>'
+        + (vo.transcript ? '<details class="voice-transcript"><summary>📝 转录文本</summary><div>' + esc(vo.transcript) + '</div></details>' : '')
+        + '</div>';
+    }
+    vh += '</div>';
+    html += sectionBlock(t.voiceTitle, vh);
+  } else {
+    html += sectionBlock(t.voiceTitle, recBarHtml() + emptyInner(t.emptyVoice));
+  }
+  return html;
+}
+
+function reviewSave(){
+  const el = document.getElementById('reviewInput');
+  if (!el) return;
+  const txt = el.value.trim();
+  fetch(REC_API + '/review', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ review_user: txt })
+  }).then(r => { if (!r.ok) throw new Error(String(r.status)); return r.json(); })
+    .then(() => {
+      state.editingReview = false;
+      const d = state.data;
+      if (d && d.today){ d.today.review = d.today.review || {}; d.today.review.user = txt; }
+      renderAll();
+    })
+    .catch(() => { alert('保存失败：录音后台（recorder）没在跑？请用「打开看板.bat」打开本页面。'); });
+}
+
+function reviewCancel(){
+  state.editingReview = false;
+  renderAll();
+}
+
+/* ================= 录音控制（本地 HTTP 接口，recorder.py 常驻进程提供） ================= */
+const REC_API = 'http://127.0.0.1:8710';
+
+function recBarHtml(){
+  return '<div class="rec-bar">'
+    + '<button class="btn" id="recBtn" onclick="recToggle()">🎙️ 开始录音</button>'
+    + '<span id="recStatus" class="rec-status"></span>'
+    + '</div><div id="recLast" class="rec-last" style="display:none"></div>';
+}
+function recToggle(){
+  fetch(REC_API + '/toggle', { method: 'POST' }).catch(() => {
+    const el = document.getElementById('recStatus');
+    if (el) el.textContent = '⚠️ 录音后台未运行';
+  });
+}
+async function recPoll(){
+  try {
+    const r = await fetch(REC_API + '/status');
+    const s = await r.json();
+    const btn = document.getElementById('recBtn');
+    const st = document.getElementById('recStatus');
+    if (btn){
+      btn.textContent = s.recording ? '⏹ 停止录音' : '🎙️ 开始录音';
+      btn.classList.toggle('recording', !!s.recording);
+    }
+    if (st) st.textContent = s.recording ? '🔴 录音中…' : '';
+    const last = document.getElementById('recLast');
+    if (last && s.last_transcript){
+      last.style.display = 'block';
+      last.textContent = '📝 最近转录（' + (s.last_file || '') + '）：' + s.last_transcript;
+    }
+  } catch (e) {
+    const st = document.getElementById('recStatus');
+    if (st) st.textContent = '⚠️ 录音后台未运行';
+  }
+}
+setInterval(recPoll, 1500);
+
+function renderContent(){
+  const d = state.data;
+  const t = STYLES[state.style];
+  detailRegistry = [];
+  const content = document.getElementById('content');
+  const data = currentView();
+  if (!data){
+    content.innerHTML = emptyCard(t.emptyArchive);
+    return;
+  }
+  const isToday = state.viewDate === d.today.date;
+  let html = '';
+  if (!isToday){
+    html += '<div class="view-banner">' + esc(t.viewPrefix) + '：<b>' + esc(state.viewDate) + '</b> '
+      + '<span class="view-weekday">' + weekday(state.viewDate) + '</span>'
+      + '<button class="btn-ghost btn" id="btnBackToday">' + esc(t.backToday) + '</button></div>';
+  }
+  if (data.notify && data.notify.length){
+    html += '<section>' + sectionHeader(t.sectionNotify) + renderNotify(data.notify, t) + '</section>';
+  }
+  html += '<section>' + sectionHeader(t.sectionBrief + (isToday ? '' : ' · ' + state.viewDate)) + renderBrief(data.brief, t) + '</section>';
+  html += '<section>' + sectionHeader(t.sectionTimeline) + renderTimeline(data.schedule, t) + '</section>';
+  html += '<section>' + sectionHeader(t.sectionActivities) + renderActivities(data.activities_new, t) + '</section>';
+  html += '<section>' + sectionHeader(t.sectionReview) + renderReview(data.review, data.voice, t) + '</section>';
+  content.innerHTML = html;
+  const backBtn = document.getElementById('btnBackToday');
+  if (backBtn) backBtn.addEventListener('click', () => { state.viewDate = d.today.date; renderAll(); });
+}
+
+function renderDateNav(){
+  const d = state.data;
+  const t = STYLES[state.style];
+  const today = d.today.date;
+  const nav = document.getElementById('dateNav');
+  const ts = d.today.ts || '';
+  const todayInner = t.labelToday + (ts ? ' <span class="pill-ts">' + esc(ts) + '</span>' : '');
+  let html = '<button class="pill ' + (state.viewDate === today ? 'active' : '') + '" data-date="' + esc(today) + '">' + todayInner + '</button>';
+  for (const dt of getDates()){
+    if (dt === today) continue;
+    html += '<button class="pill ' + (state.viewDate === dt ? 'active' : '') + '" data-date="' + esc(dt) + '">' + esc(dt) + '</button>';
+  }
+  nav.innerHTML = html;
+  nav.querySelectorAll('.pill').forEach(b => {
+    b.addEventListener('click', () => { state.viewDate = b.dataset.date; renderAll(); });
+  });
+}
+
+function renderAll(){
+  const t = STYLES[state.style];
+  document.getElementById('appTitle').textContent = t.appTitle;
+  document.getElementById('greeting').textContent = t.greeting;
+  const sb = document.getElementById('styleBtn');
+  const styleNames = { plain: '风格：正经', casual: '风格：随意', seagull: '风格：海鸥' };
+  sb.textContent = styleNames[state.style] || '风格';
+  sb.className = 'btn' + (state.style === 'plain' ? '' : ' btn-casual');
+  renderDateNav();
+  renderContent();
+}
+
+function showSourceNote(source){
+  const t = STYLES[state.style];
+  const el = document.getElementById('sourceNote');
+  if (source === 'embedded'){
+    el.textContent = t.dataTip;
+    el.classList.add('warn');
+    el.style.display = 'block';
+  } else if (source === 'demo_data.json'){
+    el.textContent = '当前展示演示数据 demo_data.json。';
+    el.classList.remove('warn');
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+/* ================= 启动 ================= */
+async function init(){
+  state.style = localStorage.getItem(STYLE_KEY) || 'plain';
+  if (!['plain', 'casual', 'seagull'].includes(state.style)) state.style = 'plain';
+  const res = await loadData();
+  state.data = res.data;
+  state.viewDate = res.data.today.date;
+  const styleCycle = { plain: 'casual', casual: 'seagull', seagull: 'plain' };
+  document.getElementById('styleBtn').addEventListener('click', () => {
+    state.style = styleCycle[state.style] || 'plain';
+    localStorage.setItem(STYLE_KEY, state.style);
+    renderAll();
+    showSourceNote(res.source);
+  });
+  renderAll();
+  showSourceNote(res.source);
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,162 @@
+# 微信信息管理系统 · 部署指南（脱敏版）
+
+> 本项目为**脱敏版**：已移除原作者的学校/校区/群名/人名/微信 ID/webhook 等全部私人信息（见文末「脱敏说明」）。
+> 使用者需自己抓微信 DB key（各机器密钥独立），并按本指南替换占位符。
+
+## 一、环境要求
+
+- Windows 10/11 + Python 3（无需管理员权限）
+- 微信 **4.x** 电脑版（3.x 不适用），每天开机登录
+- Claude Code（`claude.exe` 可命令行 headless 调用；脚本默认自动找 VSCode 扩展里的 claude.exe，找不到会回退 PATH 里的 `claude`）
+- Obsidian（可选，线二知识库用；`winget install Obsidian.Obsidian` 装）
+- ffmpeg（可选，录音转 m4a 用）
+
+```powershell
+python -m pip install frida pycryptodome win11toast requests keyboard sounddevice numpy faster-whisper zstandard
+python -c "import frida, Crypto, win11toast, requests, keyboard, sounddevice, numpy, faster_whisper, zstandard; print('依赖 OK')"
+```
+
+> **多版本 Python 的机器注意**：用 `python -m pip` 保证依赖装进 `python` 命令对应的解释器；装完 `where python` 记下它的完整路径，第 5 步计划任务里直接填完整路径——防 PATH 里别的 python 抢位报 `ModuleNotFoundError`。
+
+## 二、安装步骤
+
+### 1. 复制到安装目录
+
+把本项目文件夹（克隆仓库或解压 ZIP）放到你的工作目录，如 `D:\wechat-assistant`（文件夹名随意）。
+
+### 2. 填写配置
+
+```powershell
+copy config.example.json config.json        # 然后按 config.json 里的注释填写：
+                                            # 飞书webhook、群聊名单、公众号名单、
+                                            # 忽略校区、vault目录、whisper模型目录、
+                                            # 审核期结束日（建议设为今天+3天）
+copy 分类规则模板.md 分类规则.md             # 按你的场景改写（所有 ⚙️ 标注处）
+copy 行程表模板.md 行程表.md
+copy kanban\data.example.json kanban\data.json
+```
+
+> 可选：看板「通知」区会按群名自动分组（💰 赚钱相关 / 📢 班群通知…）。分组匹配词在 `kanban\index.html`（搜 `⚙️`）——按你的群名改；不改则通知统一归入 📌 其他，不影响其他功能。
+
+### 3. 替换占位符
+
+把 prompts 里的 `<SKILL_DIR>` 全部替换成你的安装路径：
+
+```powershell
+$dir = "D:\wechat-assistant"
+Get-ChildItem -Path "$dir\prompts" -File -Filter *.md | ForEach-Object {
+    $c = [System.IO.File]::ReadAllText($_.FullName)
+    [System.IO.File]::WriteAllText($_.FullName, $c.Replace('<SKILL_DIR>', $dir), [System.Text.UTF8Encoding]::new($false))
+}
+```
+
+> 脚本（scripts/）不需要改路径——全部按自身文件位置自动定位（`__file__` 推导），包放哪都能跑。
+
+### 4. wechat-export 抓 key（一次性，约 15 分钟）
+
+先看微信版本（设置 → 关于微信）：
+
+- **微信 ≤ 4.1.13.x**：见 `wechat-export\接手说明.md` 的 Frida 流程：
+  1. 全局搜索替换你的 wxid 目录名 / 微信安装路径 / 微信版本号（文档里有对照表）
+  2. 完全退出微信 → `python phase2e_login.py`（spawn 微信 + 扫码登录 + 观察 120 秒）→ `python phase3_verify3.py`（离线验证出 db_key.json）
+- **微信 4.1.14+**：Frida 链未适配新版，改用 wcdb-key-tool（单文件、纯只读扫描、不注入、无需装依赖）：
+  1. 下载 `wcdb_key_tool_windows.py`（github.com/TANGandXue/wcdb-key-tool），微信保持登录，管理员终端跑 `python wcdb_key_tool_windows.py extract` → 产出 `all_keys.json`
+  2. `python import_dbkey.py all_keys.json` → 生成 db_key.json（后续流程完全一致）
+  3. 兜底：DbkeyHook 的 DbkeyHookCMD exe（不注入 DLL），或把微信降级到 4.1.13 走 Frida 流程（key 跨版本/跨重登不变，抓到后升回新版仍有效）
+
+收尾（两种版本通用）：`python decrypt_db.py --count` 验证解密 → `python daily_export.py` 全量导出；图片归档另跑 `python find_image_key.py`（先点开 2-3 张聊天图片）
+
+### 5. 配置 Windows 计划任务（机器活）
+
+| 时间 | 动作 | 命令 |
+|------|------|------|
+| 12:00 | 增量导出 | `python -u daily_export.py`（工作目录 `wechat-export`） |
+| 18:00 | 增量导出 | 同上 |
+| 22:00 | 增量导出 | 同上 |
+| 12:10 | 午班分析 | `scripts\run_analysis.bat noon` |
+| 18:10 | 晚班分析 | `scripts\run_analysis.bat evening` |
+| 21:00 | 行程提醒 | `scripts\run_analysis.bat trip` |
+| 22:10 | 日报班 | `scripts\run_analysis.bat daily` |
+
+PowerShell 示例（注意别用 schtasks 包 cmd，Win11 上解析会失败）。`$py` 填上面查到的解释器完整路径，`$dir` 填你的安装目录：
+
+```powershell
+$py  = "C:\Path\To\python.exe"        # where python 查到、装了依赖的那个
+$dir = "D:\wechat-assistant"
+
+# 导出三班（12:00 / 18:00 / 22:00）
+foreach ($t in @("12:00","18:00","22:00")) {
+    $a = New-ScheduledTaskAction -Execute $py -Argument "-u daily_export.py" -WorkingDirectory "$dir\wechat-export"
+    Register-ScheduledTask -TaskName ("WeChatExport_" + $t.Replace(":","")) -Action $a -Trigger (New-ScheduledTaskTrigger -Daily -At $t) -Force
+}
+
+# 分析四班（12:10 午 / 18:10 晚 / 21:00 行程 / 22:10 日报）
+foreach ($j in @(@("1210","noon"),@("1810","evening"),@("2100","trip"),@("2210","daily"))) {
+    $a = New-ScheduledTaskAction -Execute "cmd.exe" -Argument ('/c "' + $dir + '\scripts\run_analysis.bat" ' + $j[1])
+    $h = $j[0].Substring(0,2) + ":" + $j[0].Substring(2,2)
+    Register-ScheduledTask -TaskName ("WeChatAnalysis_" + $j[0]) -Action $a -Trigger (New-ScheduledTaskTrigger -Daily -At $h) -Force
+}
+```
+
+### 6. 配置 Claude Cron（脑子活）
+
+在 Claude Code 会话里让 Claude 建 4 个 Cron（会话级，Claude 关闭即失效，每次新会话让它检查重建）：
+
+| Cron 表达式 | 班次 | 干什么 |
+|------------|------|--------|
+| `10 12 * * *` | 午班 | 按 prompts/prompt_noon.md 流程：分析→核对→入库→推送 |
+| `10 18 * * *` | 晚班 | 同午班 |
+| `0 21 * * *` | 行程 | 按 prompts/prompt_trip.md：明天+未来3天行程提醒 |
+| `10 22 * * *` | 日报 | 按 prompts/prompt_daily.md：日报五件套+复盘底稿 |
+
+把下面这段直接发给 Claude 让它建（路径换成你的安装目录）：
+
+```text
+请建 4 个会话级 Cron：
+10 12 * * * → 读 <安装目录>\prompts\prompt_noon.md 并严格按其流程执行
+10 18 * * * → 读 <安装目录>\prompts\prompt_evening.md 并严格按其流程执行
+0 21 * * * → 读 <安装目录>\prompts\prompt_trip.md 并严格按其流程执行
+10 22 * * * → 读 <安装目录>\prompts\prompt_daily.md 并严格按其流程执行
+并且每次新会话开始时检查这 4 个 Cron 是否还在，缺失就重建。
+```
+
+> 计划任务（机器活）与 Cron（脑子活）都跑同一份 prompt 文件，靠 `analysis_watermark.json` 水位防重复，同一班次只跑一个。
+
+### 7. 首次审核期（前 3 天）
+
+- 审核期内所有新信息先出「待审清单」给你过审（对话里回复"全过 / 删N号 / N号改XXX"）
+- 每次纠正都会被写进 分类规则.md，AI 判断标准越跑越准
+- 3 天后全自动模式：班次核对通过直接入库，你随时抽查
+
+### 8. 日常使用
+
+- 开看板：双击 `scripts\打开看板.bat`（或跑 `python scripts\open_kanban.py`）；**不要直接双击 index.html**（file:// 下浏览器读不到 data.json）
+- 录音：全局热键 `Ctrl+Alt+R` 或看板按钮，停止后自动转文字 + 入库复盘
+- 看板由 recorder.py 常驻进程提供本地服务（127.0.0.1:8710），挂了就重开
+
+## 三、脱敏说明
+
+本脱敏版已做以下处理：
+
+| 类别 | 处理方式 |
+|------|---------|
+| 飞书 webhook | 换成 `REPLACE_WITH_YOUR_WEBHOOK` 占位符 |
+| 微信 wxid / Windows 用户名 | 换成 `wxid_YOURWXID` / `YOURNAME` 占位符 |
+| 全部群聊名单（17 个） | 换成「示例群A/B…」占位 |
+| 公众号名单 | 换成示例名称 |
+| 学校名 / 校区名 | 从代码和文档中移除，改为 config 可配置项（忽略校区） |
+| 群名相关的看板过滤规则 | 换成通用关键词 + 注释 |
+| 人名 / 工资 / 课程等私人内容 | 从分类规则中全部移除 |
+| 看板数据（data.json）/ 待审 / 日志 | 不打包，只给空的 data.example.json |
+| 磁盘绝对路径 | 脚本改为 `__file__` 自动定位；文档用 `<SKILL_DIR>` 占位 |
+
+## 四、常见问题
+
+- **计划任务每天返回码 1、日志不写**：大概率是用 `schtasks /TR` 包了 cmd；用 PowerShell 的 Register-ScheduledTask 重建
+- **`ModuleNotFoundError: No module named 'Crypto'`（或 frida/zstandard 等）**：依赖装到了另一个 Python。`python -m pip install ...` 重装，并把计划任务/命令里的解释器换成装了依赖那个的完整路径（`where python` 查）
+- **analysis.log 里写 `claude.exe not found`**：headless 班次需要 Claude Code 命令行（VSCode 扩展版自动定位；npm/命令行版会自动回退 PATH 里的 `claude`）。都没有就先装 Claude Code 再重跑
+- **看板打不开**：用 `scripts\打开看板.bat`（或 `python scripts\open_kanban.py`）打开——会自动保活 recorder；仍不行再 `python scripts\recorder.py` 手动拉起
+- **密钥失效 / 换机器**：重跑 wechat-export 第一步（两机密钥独立）；微信 4.1.14+ 机型按接手说明里的 wcdb-key-tool 路线抓
+- **WAL 滞后**：微信 WAL 环形复用不合并，主库快照可能滞后几条消息，次日 checkpoint 自动补齐
+- **headless 班次没跑**：检查 Claude Cron 是否存活（会话级，会话一关就死）——让 Claude 每次新会话开始时检查重建
+- **headless 班次日志写 ANTHROPIC_* MISSING 或认证失败**：headless 用 Claude Code 登录态或环境变量。官方订阅登录即可用；第三方 API 端点把 `ANTHROPIC_BASE_URL` / `ANTHROPIC_AUTH_TOKEN` / `ANTHROPIC_MODEL` 配在系统环境变量里，或 VSCode settings.json 的 `claude-code.environmentVariables`（`scripts\load_env.py` 会自动读取注入）
