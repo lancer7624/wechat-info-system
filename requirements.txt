@@ -1,0 +1,10 @@
+# 微信信息管理系统 · 运行依赖（安装：python -m pip install -r requirements.txt）
+frida               # 密钥捕获（微信 <= 4.1.13 路线）
+pycryptodome        # AES / 数据库解密
+requests            # HTTP 请求（飞书推送/文章抓取）
+win11toast          # Windows 通知（扫码提醒等）
+keyboard            # 全局热键（录音）
+sounddevice         # 音频采集（录音）
+numpy               # 音频处理
+faster-whisper      # 本地语音转写（录音转文字；不装则录音功能不可用）
+zstandard           # zstd 解压（微信数据）

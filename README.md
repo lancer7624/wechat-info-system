@@ -20,6 +20,26 @@ python -c "import frida, Crypto, win11toast, requests, keyboard, sounddevice, nu
 
 ## 二、安装步骤
 
+### 0. 一键部署（推荐）
+
+双击根目录的 **`一键部署.bat`**，向导自动完成全部部署：
+
+1. 自检环境 → 列出本机所有 Python 供选择（推荐 3.10+）
+2. 探测微信安装目录 / 版本 / 账号数据目录
+3. `pip` 装依赖（失败自动切清华镜像重试）
+4. 生成 config.json、分类规则.md、行程表.md、kanban\data.json，自动替换全部占位符（wxid、微信路径、`<SKILL_DIR>` 等）
+5. **自动抓 DB 密钥**（按版本选路线）：
+   - 微信 ≤ 4.1.13：Frida 路线——向导会提示先完全退出微信，然后自动走 spawn → 登录 → 验证全流程
+   - 微信 ≥ 4.1.14：wcdb 只读扫描——微信保持登录，会弹一次 UAC（向导自动提权，工具只读、不注入）
+6. 验证解密 + 首次导出
+7. 启动看板 + **桌面生成「微信看板」快捷方式**（以后双击即开）
+8. 注册 7 个 Windows 计划任务，最后打印一段 Claude Cron 文本——复制发给 Claude Code 即完成定时分析配置
+
+> 向导可反复运行：已完成的步骤秒过；整个文件夹搬到新路径后重跑一次会自动修正所有旧路径。
+> 跑完还剩两件非自动化小事：按你的场景改 config.json 的公众号/群聊名单；改 分类规则.md 的 ⚙️ 标注处。
+
+> 以下 1~8 为手工步骤，仅当一键部署失败、或想逐步理解时参考。
+
 ### 1. 复制到安装目录
 
 把本项目文件夹（克隆仓库或解压 ZIP）放到你的工作目录，如 `D:\wechat-assistant`（文件夹名随意）。
@@ -57,10 +77,10 @@ Get-ChildItem -Path "$dir\prompts" -File -Filter *.md | ForEach-Object {
 先看微信版本（设置 → 关于微信）：
 
 - **微信 ≤ 4.1.13.x**：见 `wechat-export\接手说明.md` 的 Frida 流程：
-  1. 全局搜索替换你的 wxid 目录名 / 微信安装路径 / 微信版本号（文档里有对照表）
+  1. 全局搜索替换你的 wxid 目录名 / 微信安装路径 / 微信版本号（文档里有对照表；一键部署已自动完成；锚点表 `anchors_focus.json` 随包携带，放在 wechat-export\ 内勿动）
   2. 完全退出微信 → `python phase2e_login.py`（spawn 微信 + 扫码登录 + 观察 120 秒）→ `python phase3_verify3.py`（离线验证出 db_key.json）
-- **微信 4.1.14+**：Frida 链未适配新版，改用 wcdb-key-tool（单文件、纯只读扫描、不注入、无需装依赖）：
-  1. 下载 `wcdb_key_tool_windows.py`（github.com/TANGandXue/wcdb-key-tool），微信保持登录，管理员终端跑 `python wcdb_key_tool_windows.py extract` → 产出 `all_keys.json`
+- **微信 4.1.14+**：Frida 链未适配新版，改用 wcdb-key-tool（**已内置** `wechat-export\tools\wcdb_key_tool_windows.py`，MIT 协议，来源 github.com/TANGandXue/wcdb-key-tool；纯只读扫描、不注入、无需装依赖）：
+  1. 微信保持登录，管理员终端跑 `python tools\wcdb_key_tool_windows.py extract` → 产出 `all_keys.json`
   2. `python import_dbkey.py all_keys.json` → 生成 db_key.json（后续流程完全一致）
   3. 兜底：DbkeyHook 的 DbkeyHookCMD exe（不注入 DLL），或把微信降级到 4.1.13 走 Frida 流程（key 跨版本/跨重登不变，抓到后升回新版仍有效）
 
@@ -130,7 +150,7 @@ foreach ($j in @(@("1210","noon"),@("1810","evening"),@("2100","trip"),@("2210",
 
 ### 8. 日常使用
 
-- 开看板：双击 `scripts\打开看板.bat`（或跑 `python scripts\open_kanban.py`）；**不要直接双击 index.html**（file:// 下浏览器读不到 data.json）
+- 开看板：双击桌面「微信看板」快捷方式（一键部署自动创建；或 `scripts\打开看板.bat`、`python scripts\open_kanban.py`）；**不要直接双击 index.html**（file:// 下浏览器读不到 data.json）
 - 录音：全局热键 `Ctrl+Alt+R` 或看板按钮，停止后自动转文字 + 入库复盘
 - 看板由 recorder.py 常驻进程提供本地服务（127.0.0.1:8710），挂了就重开
 

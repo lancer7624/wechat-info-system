@@ -13,6 +13,8 @@ BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PYW = os.path.join(os.path.dirname(sys.executable), "pythonw.exe")
 URL = f'http://127.0.0.1:{PORT}/?v={int(time.time())}'  # 带时间戳绕过浏览器缓存
 FLAGS = subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS
+# pythonw 下 sys.stdout/stderr 为 None；子进程不重定向的话 http.server 每请求即崩
+NULL = subprocess.DEVNULL
 
 
 def alive():
@@ -26,7 +28,8 @@ def alive():
 
 if not alive():
     subprocess.Popen([PYW, os.path.join(BASE, 'scripts', 'recorder.py')], cwd=BASE,
-                     creationflags=FLAGS, close_fds=True)
+                     creationflags=FLAGS, close_fds=True,
+                     stdout=NULL, stderr=NULL)
     for _ in range(24):  # 最多等 12 秒
         if alive():
             break
@@ -36,7 +39,8 @@ if not alive():
     # 兜底：recorder 起不来就用静态服务器直接把看板挂出来
     subprocess.Popen([PYW, '-m', 'http.server', str(PORT),
                       '--directory', os.path.join(BASE, 'kanban')],
-                     cwd=BASE, creationflags=FLAGS, close_fds=True)
+                     cwd=BASE, creationflags=FLAGS, close_fds=True,
+                     stdout=NULL, stderr=NULL)
     time.sleep(1)
 
 webbrowser.open(URL)

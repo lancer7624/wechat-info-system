@@ -1,0 +1,50 @@
+{
+ "image_base": 6442450944,
+ "anchors": [
+  {
+   "name": "func_377328",
+   "rva": 90340656,
+   "end": 90346410,
+   "xrefs": 40,
+   "sources": [
+    "PRAGMA_CIPHER"
+   ]
+  },
+  {
+   "name": "func_233942",
+   "rva": 55823008,
+   "end": 55824974,
+   "xrefs": 5,
+   "sources": [
+    "PRAGMA_CIPHER"
+   ]
+  },
+  {
+   "name": "func_235967",
+   "rva": 56057600,
+   "end": 56057958,
+   "xrefs": 2,
+   "sources": [
+    "PRAGMA_CIPHER"
+   ]
+  },
+  {
+   "name": "func_235975",
+   "rva": 56058416,
+   "end": 56058931,
+   "xrefs": 1,
+   "sources": [
+    "PRAGMA_CIPHER"
+   ]
+  },
+  {
+   "name": "func_377333",
+   "rva": 90346976,
+   "end": 90347587,
+   "xrefs": 1,
+   "sources": [
+    "PRAGMA_CIPHER"
+   ]
+  }
+ ]
+}

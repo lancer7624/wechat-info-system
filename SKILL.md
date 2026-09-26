@@ -113,4 +113,4 @@ Claude Cron 班次（错峰 10 分钟）读增量产物做 AI 判断：
 
 ## 八、部署
 
-完整步骤见 [README.md](README.md)。要点：改 config → 替换 `<SKILL_DIR>` 占位符 → 装依赖 → wechat-export 抓 key → 配 Windows 计划任务（导出 3 班 + 4 个分析班次）+ 4 个 Claude Cron → 前 3 天审核期调优。
+完整步骤见 [README.md](README.md)。**推荐直接双击根目录 `一键部署.bat`**——自动装依赖、替换占位符、抓密钥、生成桌面快捷方式、注册计划任务。手工要点：改 config → 替换 `<SKILL_DIR>` 占位符 → 装依赖 → wechat-export 抓 key → 配 Windows 计划任务（导出 3 班 + 4 个分析班次）+ 4 个 Claude Cron → 前 3 天审核期调优。
