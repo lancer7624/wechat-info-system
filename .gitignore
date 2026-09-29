@@ -21,6 +21,7 @@ kanban/data.json
 analysis_watermark.json
 trip_watermark.json
 .setup_state.json
+scripts/python_path.txt
 
 # Python 缓存
 __pycache__/

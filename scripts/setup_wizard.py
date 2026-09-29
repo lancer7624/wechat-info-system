@@ -683,6 +683,22 @@ def s1_python(state):
     return py
 
 
+def write_python_hint(py):
+    """把所选解释器记到 scripts\\python_path.txt：run_analysis.bat 读它用完整路径
+    调 python，并把解释器目录前置进 PATH（headless 智能体在 prompt 里跑
+    `python verify_entries.py` 等命令也走它）。PATH 里没有 python 的机器靠它兜底。"""
+    p = os.path.join(ROOT, "scripts", "python_path.txt")
+    if DRY:
+        C.info("[dry] 将写入解释器记录 " + p)
+        return
+    try:
+        with open(p, "w", encoding="utf-8") as f:
+            f.write(py + "\n")
+        C.ok("已记录解释器路径（班次脚本用）: " + py)
+    except OSError as e:
+        C.warn("写 scripts\\python_path.txt 失败: %s（班次退回 PATH 里的 python）" % e)
+
+
 def s2_wechat(ctx_state):
     C.step("S2", "探测微信与账号目录")
     info = detect_wechat()
@@ -1390,6 +1406,7 @@ def main():
     py = s1_python(state)
     if not py:
         return 1
+    write_python_hint(py)
     wechat, acct = s2_wechat(state)
     save_state(state)
     results = {}

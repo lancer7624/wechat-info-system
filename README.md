@@ -16,7 +16,7 @@ python -m pip install frida pycryptodome win11toast requests keyboard sounddevic
 python -c "import frida, Crypto, win11toast, requests, keyboard, sounddevice, numpy, faster_whisper, zstandard; print('依赖 OK')"
 ```
 
-> **多版本 Python 的机器注意**：用 `python -m pip` 保证依赖装进 `python` 命令对应的解释器；装完 `where python` 记下它的完整路径，第 5 步计划任务里直接填完整路径——防 PATH 里别的 python 抢位报 `ModuleNotFoundError`。
+> **多版本 Python 的机器注意**：用 `python -m pip` 保证依赖装进 `python` 命令对应的解释器；装完 `where python` 记下它的完整路径，第 5 步计划任务里直接填完整路径——防 PATH 里别的 python 抢位报 `ModuleNotFoundError`。一键部署会把所选解释器额外记到 `scripts\python_path.txt`，分析班次（`run_analysis.bat`）优先用它并把其目录前置进 PATH——机器没勾 Add to PATH 也不影响班次。
 
 ## 二、安装步骤
 
@@ -60,11 +60,11 @@ copy kanban\data.example.json kanban\data.json
 
 ### 3. 替换占位符
 
-把 prompts 里的 `<SKILL_DIR>` 全部替换成你的安装路径：
+把 `<SKILL_DIR>` 全部替换成你的安装路径（出现在 `prompts\*.md` 和根目录 `CLAUDE.md`）：
 
 ```powershell
 $dir = "D:\wechat-assistant"
-Get-ChildItem -Path "$dir\prompts" -File -Filter *.md | ForEach-Object {
+Get-ChildItem -Path "$dir\prompts\*.md", "$dir\CLAUDE.md" -File | ForEach-Object {
     $c = [System.IO.File]::ReadAllText($_.FullName)
     [System.IO.File]::WriteAllText($_.FullName, $c.Replace('<SKILL_DIR>', $dir), [System.Text.UTF8Encoding]::new($false))
 }
@@ -176,6 +176,7 @@ foreach ($j in @(@("1210","noon"),@("1810","evening"),@("2100","trip"),@("2210",
 
 - **计划任务每天返回码 1、日志不写**：大概率是用 `schtasks /TR` 包了 cmd；用 PowerShell 的 Register-ScheduledTask 重建
 - **`ModuleNotFoundError: No module named 'Crypto'`（或 frida/zstandard 等）**：依赖装到了另一个 Python。`python -m pip install ...` 重装，并把计划任务/命令里的解释器换成装了依赖那个的完整路径（`where python` 查）
+- **班次日志出现 `'python' 不是内部或外部命令` 或 exit=9009**：本机 Python 没进 PATH（安装时没勾 Add python.exe to PATH）。一键部署会自动把所选解释器写进 `scripts\python_path.txt`，`run_analysis.bat` 优先用它、并把它前置进 PATH（智能体在班次里跑 `python verify_entries.py` 等命令也因此可用）；手工部署补一个同名文件、内容一行解释器完整路径即可，或把 Python 加进 PATH
 - **用别的智能体（Gemini CLI / Codex CLI / Cursor Agent / Aider / opencode 等）**：headless 班次的「大脑」不绑死 Claude Code。想固定用哪个，在 config.json 顶层加「智能体」节，例如：
   ```json
   "智能体": { "名称": "Gemini CLI", "命令": "gemini", "参数": ["--yolo"] }
