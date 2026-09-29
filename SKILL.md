@@ -52,6 +52,7 @@ wechat-assistant-skill/
 │   ├── index.html        ←   看板页面（零 CDN 离线可用）
 │   └── data.example.json ←   数据接口样例（复制为 data.json）
 └── wechat-export/        ← 依赖：微信本地库解密导出（见其 接手说明.md）
+    └── export_biz.py     ←   独立公众号导出（白名单过滤；名字走 contact 库，勿解析 XML）
 ```
 
 ## 三、数据流
