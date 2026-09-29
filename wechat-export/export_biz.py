@@ -87,7 +87,7 @@ def find_db_root(cli=None):
     try:
         with open(p, encoding="utf-8") as f:
             m = re.search(r'^DB_ROOT\s*=\s*r"([^"]+)"', f.read(), re.M)
-        if m and "YOURNAME" not in m.group(1) and os.path.isdir(m.group(1)):
+        if m and os.path.isdir(m.group(1)):
             return m.group(1)
     except OSError:
         pass

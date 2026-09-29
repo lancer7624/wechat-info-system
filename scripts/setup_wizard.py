@@ -1191,8 +1191,15 @@ def s9_shortcut(py):
     desk = DESKTOP_DIR or known_folder(FOLDERID_Desktop) \
         or os.path.join(os.path.expanduser("~"), "Desktop")
     if not os.path.isdir(desk):
-        C.err("桌面目录不存在: " + desk)
-        return "fail"
+        if DRY:
+            C.info("[dry] 将创建目录 " + desk)
+        else:
+            try:
+                os.makedirs(desk, exist_ok=True)
+                C.ok("已创建桌面目录 " + desk)
+            except OSError as e:
+                C.err("桌面目录创建失败: " + desk + "  " + str(e))
+                return "fail"
     lnk = os.path.join(desk, "微信看板.lnk")
     ps = ("$ProgressPreference = 'SilentlyContinue'\n"
           "$ws = New-Object -ComObject WScript.Shell\n"
