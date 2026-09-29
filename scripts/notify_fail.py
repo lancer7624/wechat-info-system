@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""班次失败告警（run_analysis.bat 调用；claude 自动重试后仍失败时推飞书）
+"""班次失败告警（run_analysis.bat 调用；智能体自动重试后仍失败时推飞书）
 用法: python notify_fail.py <班次> <退出码>
       python notify_fail.py <班次> <退出码> --dry   # 只打印，不推送
 """

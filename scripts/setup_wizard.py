@@ -595,15 +595,20 @@ def wechat_running():
 
 # ---------------------------------------------------------------- 步骤 S0-S2
 
-def detect_claude():
-    """找 claude.exe：VSCode 扩展优先，其次 PATH；找不到返回 None。"""
-    up = os.environ.get("USERPROFILE") or os.path.expanduser("~")
-    hits = glob.glob(os.path.join(up, ".vscode", "extensions",
-                                  "anthropic.claude-code-*",
-                                  "resources", "native-binary", "claude.exe"))
-    if hits:
-        return sorted(hits)[-1]
-    return shutil.which("claude")
+def detect_agents():
+    """探测本机可用的命令行智能体（复用 agent_runner 的预设与顺序）。
+    返回 [(key, 名称, exe路径), ...]；找不到返回 []。"""
+    try:
+        import agent_runner as AR
+    except Exception:
+        return []
+    out = []
+    for key in AR.AGENT_ORDER:
+        p = AR.PRESETS[key]
+        exe = AR.resolve_command(p["命令"])
+        if exe:
+            out.append((key, p["名称"], exe))
+    return out
 
 
 def s0_selfcheck():
@@ -635,12 +640,12 @@ def s0_selfcheck():
     except Exception:
         C.err("当前目录不可写（权限不足），请把包放到有写权限的目录再跑。")
         return False
-    cexe = detect_claude()
-    if cexe:
-        C.ok("Claude Code: " + cexe)
+    agents = detect_agents()
+    if agents:
+        C.ok("智能体: " + " / ".join("%s (%s)" % (a[1], a[2]) for a in agents))
     else:
-        C.warn("没检测到 Claude Code（claude.exe）——分析班次会失败。")
-        C.info("装好 Claude Code 并登录（或配 ANTHROPIC_* 环境变量）即可；见 README 常见问题。")
+        C.warn("没检测到任何命令行智能体（Claude Code / Gemini CLI / Codex 等）——分析班次会失败。")
+        C.info("装一个并登录，或在 config.json「智能体」节指定；见 README 常见问题。")
     C.ok("自检通过")
     return True
 
@@ -1280,12 +1285,19 @@ def s11_summary(py, wechat, acct, results):
     C.emit("  看板     : " + results.get("kanban", "-"))
     C.emit("  快捷方式 : " + results.get("shortcut", "-"))
     C.emit("  计划任务 : " + results.get("tasks", "-"))
-    cexe = detect_claude()
-    C.emit("  Claude Code : " + (cexe or "未检测到（见下方待办）"))
+    agents = detect_agents()
+    if agents:
+        C.emit("  智能体   : %s (%s)" % (agents[0][1], agents[0][2]))
+        if len(agents) > 1:
+            C.emit("             （还检测到：%s；默认用第一个，想固定用哪个在 config.json「智能体」节指定）"
+                   % "、".join(a[1] for a in agents[1:]))
+    else:
+        C.emit("  智能体   : 未检测到（见下方待办）")
     C.emit("")
     C.emit("  待办清单：")
-    if not cexe:
-        C.emit("  · 没装 Claude Code -> 分析班次会失败；装好并登录（或配 ANTHROPIC_* 环境变量）即可，见 README 常见问题")
+    if not agents:
+        C.emit("  · 没装命令行智能体 -> 分析班次会失败；装一个并登录（Claude Code / Gemini CLI / Codex 等），")
+        C.emit("    或改 config.json「智能体」节指定，见 README 常见问题")
     if results.get("keys") in ("skipped", "fail", None, "exists") and results.get("verify") != "ok":
         C.emit("  · 密钥没配好 -> 见 README 第 4 节；配好后跑:")
         C.emit("    cd wechat-export && python decrypt_db.py --count && python daily_export.py")
@@ -1293,7 +1305,8 @@ def s11_summary(py, wechat, acct, results):
     C.emit("  · 编辑 分类规则.md：所有 ⚙️ 标注处改成你的场景")
     C.emit("  · config.json 的 vault目录 / whisper模型目录（用知识库/录音转写才需要）")
     C.emit("")
-    C.emit("  Claude Cron（会话级）：在该目录打开 Claude Code 的新会话会按 CLAUDE.md 自动创建；")
+    C.emit("  Claude Cron（会话级，仅 Claude Code 有此机制；用其它智能体靠计划任务已足够）：")
+    C.emit("  在该目录打开 Claude Code 的新会话会按 CLAUDE.md 自动创建；")
     C.emit("  也可把下面这段直接发给它手动建（等效）：")
     C.emit("  " + "-" * 60)
     txt = ("请建 4 个会话级 Cron：\n"

@@ -4,13 +4,14 @@
 1. 对比 activity_state.json（按天维度，{date, counts:{会话hash:消息数}, biz:N}）
 2. 有新增消息 → Windows toast 通知（谁找你、几条）
 3. 无新增 → 静默退出；跨天自动重建基线
-可选 --ai：有新消息时调 claude -p 读正文生成智能总结（默认关，隐私权衡）
+可选 --ai：有新消息时调本机命令行智能体（自动探测，规则同 scripts/agent_runner.py）读正文生成一句话总结（默认关，隐私权衡）
 用法: python activity_check.py [--ai] [--dry]（--dry 只打印不弹通知）
 """
 import json
 import os
 import subprocess
 import sys
+import tempfile
 import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -119,8 +120,28 @@ def notify(title, body, dry=False):
         print(f"toast 失败（不影响导出）: {e}", flush=True)
 
 
+def pick_agent():
+    """挑本机命令行智能体（复用 scripts/agent_runner.py 的探测与配置）。
+
+    返回 (基础命令行, 参数模板, 名称)；不可用时返回 None（回退裸 claude -p）。
+    """
+    try:
+        scripts = os.path.join(os.path.dirname(HERE), "scripts")
+        if scripts not in sys.path:
+            sys.path.insert(0, scripts)
+        import agent_runner as AR
+        agent, _src = AR.load_agent()
+        if not agent:
+            return None
+        exe = agent["exe"]
+        base = ["cmd.exe", "/c", exe] if exe.lower().endswith((".cmd", ".bat")) else [exe]
+        return base, list(agent["参数"]), agent["名称"]
+    except Exception:
+        return None
+
+
 def ai_summary(total, changed, dry=False):
-    """调 claude -p 读新增消息正文生成一句话总结（可选，默认关）"""
+    """调本机命令行智能体（自动探测）读新增消息正文生成一句话总结（可选，默认关）"""
     if dry:
         print("[AI] dry 模式跳过", flush=True)
         return None
@@ -141,15 +162,43 @@ def ai_summary(total, changed, dry=False):
               "请用一句中文总结有什么需要用户关注的事（谁、什么事），"
               "不超过 40 字，没有值得关注的就说'无'。\n\n" +
               "\n".join(snippets)[:4000])
+    tmp_path = None
     try:
-        r = subprocess.run(["claude", "-p", prompt], capture_output=True,
-                           text=True, timeout=180, encoding="utf-8",
-                           errors="replace")
+        picked = pick_agent()
+        if picked:
+            base, params, name = picked
+            use_arg = any("{prompt}" in p for p in params)
+            use_file = any("{prompt_file}" in p for p in params)
+            if use_file:
+                tf = tempfile.NamedTemporaryFile("w", suffix=".md", delete=False,
+                                                 encoding="utf-8", newline="")
+                tf.write(prompt)
+                tf.close()
+                tmp_path = tf.name
+            cmd = list(base)
+            for p in params:
+                if "{prompt_file}" in p:
+                    p = p.replace("{prompt_file}", tmp_path)
+                if "{prompt}" in p:
+                    p = p.replace("{prompt}", prompt)
+                cmd.append(p)
+            print(f"[AI] 智能体: {name}", flush=True)
+        else:
+            cmd, use_arg, use_file = ["claude", "-p", prompt], True, False
+        kw = {"stdin": subprocess.DEVNULL} if (use_arg or use_file) else {"input": prompt}
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=180,
+                           encoding="utf-8", errors="replace", **kw)
         s = r.stdout.strip()
         return s if s and s != "无" else None
     except Exception as e:
         print(f"AI 总结失败: {e}", flush=True)
         return None
+    finally:
+        if tmp_path:
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
 
 
 def main():

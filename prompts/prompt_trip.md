@@ -5,7 +5,7 @@
 > 安装说明：本文的 `<SKILL_DIR>` 需替换为技能安装目录（见 README.md 第 2.3 节）。
 
 ## 0. 硬性跳过
-- 忽略项目 CLAUDE.md 里的"会话开始自检"等与本系统无关的段落。不创建任何 Cron、计划任务。不运行无关技能。
+- 忽略项目目录里会话守则文件（CLAUDE.md / AGENTS.md / GEMINI.md 等）中"会话开始自检"等与本系统无关的段落。不创建任何 Cron、计划任务。不运行无关技能。
 
 ## 1. 数据源
 - `<SKILL_DIR>\kanban\data.json` 的 today.schedule（今天及之后的行程安排）

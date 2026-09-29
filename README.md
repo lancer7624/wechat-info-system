@@ -7,7 +7,7 @@
 
 - Windows 10/11 + Python 3（无需管理员权限）
 - 微信 **4.x** 电脑版（3.x 不适用），每天开机登录
-- Claude Code（`claude.exe` 可命令行 headless 调用；脚本默认自动找 VSCode 扩展里的 claude.exe，找不到会回退 PATH 里的 `claude`）
+- 一个命令行智能体（自动探测，任选其一）：Claude Code（默认；自动找 VSCode 扩展里的 claude.exe，回退 PATH 里的 `claude`）/ Gemini CLI / Codex CLI / Cursor Agent / Aider / opencode——想固定用哪个或接任意 CLI，见常见问题「用别的智能体」
 - Obsidian（可选，线二知识库用；`winget install Obsidian.Obsidian` 装）
 - ffmpeg（可选，录音转 m4a 用）
 
@@ -33,7 +33,7 @@ python -c "import frida, Crypto, win11toast, requests, keyboard, sounddevice, nu
    - 微信 ≥ 4.1.14：wcdb 只读扫描——微信保持登录，会弹一次 UAC（向导自动提权，工具只读、不注入）
 6. 验证解密 + 首次导出
 7. 启动看板 + **桌面生成「微信看板」快捷方式**（以后双击即开）
-8. 注册 7 个 Windows 计划任务，最后打印 Claude Cron 说明——包内已附 `CLAUDE.md`，在该目录打开 Claude Code 即自动创建这 4 个 Cron（也可复制那段文本发给它手动建）
+8. 注册 7 个 Windows 计划任务，最后打印 Claude Cron 说明（仅 Claude Code）——包内已附 `CLAUDE.md`，在该目录打开 Claude Code 即自动创建这 4 个 Cron（也可复制那段文本发给它手动建；用其它智能体靠计划任务即可）
 
 > 向导可反复运行：已完成的步骤秒过；整个文件夹搬到新路径后重跑一次会自动修正所有旧路径。
 > 跑完还剩两件非自动化小事：按你的场景改 config.json 的公众号/群聊名单；改 分类规则.md 的 ⚙️ 标注处。
@@ -118,7 +118,9 @@ foreach ($j in @(@("1210","noon"),@("1810","evening"),@("2100","trip"),@("2210",
 }
 ```
 
-### 6. 配置 Claude Cron（脑子活）
+### 6. 配置 Claude Cron（脑子活，仅 Claude Code）
+
+> 会话级 Cron 是 Claude Code 独有的机制；用 Gemini CLI / Codex CLI 等其它智能体时**本节整节跳过**——计划任务（机器活）已覆盖全部 4 个班次。
 
 包内已附 `CLAUDE.md`——在该目录打开 Claude Code 的新会话时，它会**自动检查并创建下面这 4 个 Cron**（会话级，Claude 关闭即失效，每次新会话自动检查重建），无需手动粘贴；也可把文末那段直接发给 Claude 手动建（等效）：
 
@@ -174,11 +176,20 @@ foreach ($j in @(@("1210","noon"),@("1810","evening"),@("2100","trip"),@("2210",
 
 - **计划任务每天返回码 1、日志不写**：大概率是用 `schtasks /TR` 包了 cmd；用 PowerShell 的 Register-ScheduledTask 重建
 - **`ModuleNotFoundError: No module named 'Crypto'`（或 frida/zstandard 等）**：依赖装到了另一个 Python。`python -m pip install ...` 重装，并把计划任务/命令里的解释器换成装了依赖那个的完整路径（`where python` 查）
-- **analysis.log 里写 `claude.exe not found`**：headless 班次需要 Claude Code 命令行（VSCode 扩展版自动定位；npm/命令行版会自动回退 PATH 里的 `claude`）。都没有就先装 Claude Code 再重跑
+- **用别的智能体（Gemini CLI / Codex CLI / Cursor Agent / Aider / opencode 等）**：headless 班次的「大脑」不绑死 Claude Code。想固定用哪个，在 config.json 顶层加「智能体」节，例如：
+  ```json
+  "智能体": { "名称": "Gemini CLI", "命令": "gemini", "参数": ["--yolo"] }
+  ```
+  - 「命令」填命令名（走 PATH）或 exe 绝对路径（含路径分隔符即按路径找）；「名称」只影响日志显示
+  - 提示词怎么喂看「参数」：**不含占位符 = 从标准输入喂**（对 npm 装的 `.cmd` 外壳最稳）；含 `{prompt}` = 提示词内容当参数；含 `{prompt_file}` = 提示词文件绝对路径当参数（适合支持读文件的 CLI，如 aider）
+  - 「参数」不写就用内置预设；各家 CLI 参数随版本可能变，跑不通看 analysis.log 里的报错再调
+  - 限制：npm 装的 CLI 在 Windows 上是 `.cmd` 外壳，多行提示词没法当命令行参数传（系统限制，遇到会在日志里明确报错并给替代方案），这类 CLI 用 stdin 方式
+  - 会话级 Cron 是 Claude Code 独有机制；用其它智能体无需理会第 6 节，计划任务已覆盖全部 4 个班次
+- **analysis.log 里写「没探测到任何命令行智能体」**：headless 班次需要一个命令行智能体，脚本按顺序自动探测本机可用的（claude → gemini → codex → cursor-agent → aider → opencode，用第一个找到的）；一个都没装就先装一个并登录，或用上一条在 config.json「智能体」节显式指定
 - **看板打不开**：用 `scripts\打开看板.bat`（或 `python scripts\open_kanban.py`）打开——会自动保活 recorder；仍不行再 `python scripts\recorder.py` 手动拉起
 - **密钥失效 / 换机器**：重跑 wechat-export 第一步（两机密钥独立）；微信 4.1.14+ 机型按接手说明里的 wcdb-key-tool 路线抓
 - **WAL 滞后**：微信 WAL 环形复用不合并，主库快照可能滞后几条消息，次日 checkpoint 自动补齐
 - **公众号白名单一条都匹配不上 / 名字显示成 gh_xxx**：**别去解析推送 XML 里的 nickname**——微信 4.x 那些中文字段是 GBK 字节、且多数条目根本没有该字段，解析必然失败（乱码 → fallback 成 ID → 名单按中文名比对全不中）。正确做法是走 contact 库的名字映射：跑 `python wechat-export\export_biz.py`（独立公众号导出工具，名单读 config.json「公众号」，产物 `export\<日期>\biz_articles.json`）。输出里 `contact 库: N 个名字映射` 若为 0，说明 db_key.json 没覆盖 contact 库，按第 4 步补抓
-- **班次失败了会通知吗**：会。claude 自动重试（隔 60 秒）仍失败时推一条飞书告警（`⚠ 微信班次失败`，带班次名和退出码），排查看 `analysis.log` 尾部；成功和"没新消息"都不打扰。链路自测：`python scripts\notify_fail.py noon 5 --dry`（只打印；去掉 `--dry` 会真推一条）
-- **headless 班次没跑**：检查 Claude Cron 是否存活（会话级，会话一关就死）——让 Claude 每次新会话开始时检查重建
-- **headless 班次日志写 ANTHROPIC_* MISSING 或认证失败**：headless 用 Claude Code 登录态或环境变量。官方订阅登录即可用；第三方 API 端点把 `ANTHROPIC_BASE_URL` / `ANTHROPIC_AUTH_TOKEN` / `ANTHROPIC_MODEL` 配在系统环境变量里，或 VSCode settings.json 的 `claude-code.environmentVariables`（`scripts\load_env.py` 会自动读取注入）
+- **班次失败了会通知吗**：会。智能体自动重试（隔 60 秒）仍失败时推一条飞书告警（`⚠ 微信班次失败`，带班次名和退出码），排查看 `analysis.log` 尾部；成功和"没新消息"都不打扰。链路自测：`python scripts\notify_fail.py noon 5 --dry`（只打印；去掉 `--dry` 会真推一条）
+- **headless 班次没跑**：先看 analysis.log 尾部报错；走 Claude Code 时再检查会话级 Cron 是否存活（会话一关就死，让 Claude 每次新会话开始时检查重建），用其它智能体无此机制、靠计划任务即可
+- **headless 班次日志写 ANTHROPIC_* MISSING 或认证失败（仅 Claude Code 通道）**：headless 用 Claude Code 登录态或环境变量。官方订阅登录即可用；第三方 API 端点把 `ANTHROPIC_BASE_URL` / `ANTHROPIC_AUTH_TOKEN` / `ANTHROPIC_MODEL` 配在系统环境变量里，或 VSCode settings.json 的 `claude-code.environmentVariables`（`scripts\load_env.py` 会自动读取注入）

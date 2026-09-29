@@ -5,8 +5,8 @@ description: 微信信息管理系统（分享版）——爬取微信本地群�
 
 # 微信信息管理系统（分享版）
 
-> 轻量脚本 + Claude 后台运作：机器活归脚本，脑子活归 Claude，用户只看（看板）、只写（复盘）。
-> 零 API 费用（AI 判断可接任意 Claude 会话）、零服务器、零数据库，全本地运行。
+> 轻量脚本 + 命令行智能体后台运作（Claude Code 默认，也支持 Gemini CLI / Codex CLI 等）：机器活归脚本，脑子活归智能体，用户只看（看板）、只写（复盘）。
+> 零 API 费用（AI 判断走你已有的智能体登录态/订阅）、零服务器、零数据库，全本地运行。
 
 ## 一、总架构
 
@@ -20,7 +20,7 @@ description: 微信信息管理系统（分享版）——爬取微信本地群�
 
 ```
 原料：微信本地库（群聊 + 订阅号推送记录）
-工具：Python + Windows 计划任务 + Claude Cron + toast + HTML 看板 + Obsidian + whisper（本地转文字）
+工具：Python + Windows 计划任务（+ Claude Code 会话 Cron 可选）+ toast + HTML 看板 + Obsidian + whisper（本地转文字）
 ```
 
 ## 二、目录结构
@@ -46,7 +46,8 @@ wechat-assistant-skill/
 │   ├── recorder.py       ←   看板静态服务 + 录音热键（Ctrl+Alt+R）+ whisper 转录
 │   ├── toast.ps1         ←   桌面气泡提示
 │   ├── load_env.py       ←   从 VSCode settings 读 Claude 环境变量
-│   ├── run_analysis.bat  ←   headless 班次入口（claude.exe -p 无人值守）
+│   ├── run_analysis.bat  ←   headless 班次入口（智能体无人值守跑 prompt）
+│   ├── agent_runner.py   ←   智能体调用器（config.json「智能体」节，或自动探测）
 │   ├── open_kanban.py    ←   一键开看板（保活 recorder + 开浏览器）
 │   ├── 打开看板.bat       ←   开看板双击入口（调 open_kanban.py）
 │   └── fetch_article.py  ←   公众号正文抓取（直连 + 搜狗旁路），按名单强制拦截
@@ -64,7 +65,7 @@ wechat-assistant-skill/
     ↓（此后完全离线）
 每日 12:00/18:00/22:00 计划任务：快照 → 解密 → 导出 Markdown → export\YYYY-MM-DD\
     ↓
-Claude Cron 班次（错峰 10 分钟）读增量产物做 AI 判断：
+智能体班次（计划任务触发，错峰 10 分钟；Claude Code 另有会话 Cron 通道）读增量产物做 AI 判断：
     ├─ 📢 时效性重要（活动/截止/改时间/@我）→ toast + 飞书推送
     ├─ 📚 知识性内容 → 线二知识库
     └─ 普通消息 → 当日简报，日报汇总
@@ -79,16 +80,16 @@ Claude Cron 班次（错峰 10 分钟）读增量产物做 AI 判断：
 | 时间 | 动作 |
 |------|------|
 | 12:00 / 18:00 / 22:00 | Windows 计划任务增量导出（wechat-export） |
-| 12:10 / 18:10 | Claude 分析班次 → 重要信息 toast + 飞书通知 |
+| 12:10 / 18:10 | 分析班次（命令行智能体）→ 重要信息 toast + 飞书通知 |
 | 21:00 | 行程汇总提醒（明天安排 + 未来 3 天） |
 | 22:10 | 日报班：通知 + 日报五件套 + AI 复盘底稿 + 公众号入库 + 知识候选清单 |
 | 睡前 | 用户看日报写复盘 / 按录音键（Ctrl+Alt+R）口述 |
 | 录音停止后 | 自动：看板挂音频 + whisper 转文字 + 转录入库 |
-| 全天 | wechat-export 的 activity_check 关键词兜底 toast（不依赖 Claude 会话存活） |
+| 全天 | wechat-export 的 activity_check 关键词兜底 toast（不依赖智能体会话存活） |
 
-## 五、Claude 班次职责（prompts/ 目录，无人值守）
+## 五、班次职责（prompts/ 目录，无人值守）
 
-每个班次由 Windows 计划任务触发 `run_analysis.bat <班次>`（另有 Claude Cron 通道可选，两套共享 `analysis_watermark.json` 水位防重复），用 `claude.exe -p` headless 跑对应 prompt。班次硬性纪律：
+每个班次由 Windows 计划任务触发 `run_analysis.bat <班次>`（另有 Claude Code 会话 Cron 通道可选，两套共享 `analysis_watermark.json` 水位防重复），用命令行智能体 headless 跑对应 prompt——默认 Claude Code，可在 config.json「智能体」节换 Gemini CLI / Codex CLI 等，或按顺序自动探测（见 README 常见问题）。班次硬性纪律：
 
 1. **先读 分类规则.md + config.json + 水位文件，再干**
 2. **分析窗口按水位**：watermark.date ≠ 今天 → 分析今天全部；= 今天 → 只分析时间戳 > watermark.last_ts 的消息
@@ -116,4 +117,4 @@ Claude Cron 班次（错峰 10 分钟）读增量产物做 AI 判断：
 
 ## 八、部署
 
-完整步骤见 [README.md](README.md)。**推荐直接双击根目录 `一键部署.bat`**——自动装依赖、替换占位符、抓密钥、生成桌面快捷方式、注册计划任务。手工要点：改 config → 替换 `<SKILL_DIR>` 占位符 → 装依赖 → wechat-export 抓 key → 配 Windows 计划任务（导出 3 班 + 4 个分析班次）+ 4 个 Claude Cron（在该目录开 Claude Code 即按 CLAUDE.md 自动创建）→ 前 3 天审核期调优。
+完整步骤见 [README.md](README.md)。**推荐直接双击根目录 `一键部署.bat`**——自动装依赖、替换占位符、抓密钥、生成桌面快捷方式、注册计划任务。手工要点：改 config → 替换 `<SKILL_DIR>` 占位符 → 装依赖 → wechat-export 抓 key → 配 Windows 计划任务（导出 3 班 + 4 个分析班次；Claude Code 另可在该目录开会话自动建 4 个 Cron，其它智能体靠计划任务即可）→ 前 3 天审核期调优。

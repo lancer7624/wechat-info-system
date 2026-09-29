@@ -314,7 +314,7 @@ def main():
     save_watermark(new_water)
     log(f"水位推进: {time.strftime('%Y-%m-%d %H:%M', time.localtime(new_water))}")
 
-    # 7. 关键词兜底 toast（不依赖 Claude 会话）
+    # 7. 关键词兜底 toast（不依赖智能体会话）
     try:
         hits = keyword_scan(out_dir)
         if hits:
