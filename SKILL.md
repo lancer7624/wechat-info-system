@@ -40,6 +40,7 @@ wechat-assistant-skill/
 ├── scripts/              ← 机器活脚本
 │   ├── feishu_notify.py  ←   飞书群机器人推送（webhook 只存 config.json）
 │   ├── feishu_push.py    ←   推送命令行封装
+│   ├── notify_fail.py    ←   班次失败飞书告警（run_analysis.bat 重试仍败时调）
 │   ├── verify_entries.py ←   写看板前的核对闸门（数据核实铁律执行器）
 │   ├── recorder.py       ←   看板静态服务 + 录音热键（Ctrl+Alt+R）+ whisper 转录
 │   ├── toast.ps1         ←   桌面气泡提示

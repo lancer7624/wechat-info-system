@@ -179,5 +179,6 @@ foreach ($j in @(@("1210","noon"),@("1810","evening"),@("2100","trip"),@("2210",
 - **密钥失效 / 换机器**：重跑 wechat-export 第一步（两机密钥独立）；微信 4.1.14+ 机型按接手说明里的 wcdb-key-tool 路线抓
 - **WAL 滞后**：微信 WAL 环形复用不合并，主库快照可能滞后几条消息，次日 checkpoint 自动补齐
 - **公众号白名单一条都匹配不上 / 名字显示成 gh_xxx**：**别去解析推送 XML 里的 nickname**——微信 4.x 那些中文字段是 GBK 字节、且多数条目根本没有该字段，解析必然失败（乱码 → fallback 成 ID → 名单按中文名比对全不中）。正确做法是走 contact 库的名字映射：跑 `python wechat-export\export_biz.py`（独立公众号导出工具，名单读 config.json「公众号」，产物 `export\<日期>\biz_articles.json`）。输出里 `contact 库: N 个名字映射` 若为 0，说明 db_key.json 没覆盖 contact 库，按第 4 步补抓
+- **班次失败了会通知吗**：会。claude 自动重试（隔 60 秒）仍失败时推一条飞书告警（`⚠ 微信班次失败`，带班次名和退出码），排查看 `analysis.log` 尾部；成功和"没新消息"都不打扰。链路自测：`python scripts\notify_fail.py noon 5 --dry`（只打印；去掉 `--dry` 会真推一条）
 - **headless 班次没跑**：检查 Claude Cron 是否存活（会话级，会话一关就死）——让 Claude 每次新会话开始时检查重建
 - **headless 班次日志写 ANTHROPIC_* MISSING 或认证失败**：headless 用 Claude Code 登录态或环境变量。官方订阅登录即可用；第三方 API 端点把 `ANTHROPIC_BASE_URL` / `ANTHROPIC_AUTH_TOKEN` / `ANTHROPIC_MODEL` 配在系统环境变量里，或 VSCode settings.json 的 `claude-code.environmentVariables`（`scripts\load_env.py` 会自动读取注入）

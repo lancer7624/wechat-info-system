@@ -47,7 +47,10 @@ if not "%ERRORLEVEL%"=="0" (
   call "%CLAUDE_EXE%" -p --allowedTools "Bash,PowerShell,Read,Write,Edit,Glob,Grep" --max-turns 100 --output-format text < "%SYS%\prompts\prompt_%BATCH%.md" >> "%SYS%\run_tmp_%BATCH%.log" 2>&1
 )
 
+rem keep claude exit code first: type/del below reset errorlevel to 0
+set "RC=%ERRORLEVEL%"
 type "%SYS%\run_tmp_%BATCH%.log" >> "%LOG%" 2>nul
 del "%SYS%\run_tmp_%BATCH%.log" 2>nul
-echo [%date% %time%] [%BATCH%] end exit=%errorlevel% >> "%LOG%"
-exit /b %errorlevel%
+echo [%date% %time%] [%BATCH%] end exit=%RC% >> "%LOG%"
+if not "%RC%"=="0" python "%SYS%\scripts\notify_fail.py" %BATCH% %RC% >> "%LOG%" 2>&1
+exit /b %RC%
