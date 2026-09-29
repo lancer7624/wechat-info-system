@@ -29,6 +29,7 @@ description: 微信信息管理系统（分享版）——爬取微信本地群�
 wechat-assistant-skill/
 ├── SKILL.md              ← 本文件（技能入口）
 ├── README.md             ← 部署指南（先看这个）
+├── CLAUDE.md             ← 会话守则：在该目录开 Claude Code 即自动检查/重建 4 个班次 Cron
 ├── config.example.json   ← 配置模板（复制为 config.json 后填写）
 ├── 分类规则模板.md        ← 分类规则（复制为 分类规则.md 后按你的场景改写）
 ├── 行程表模板.md          ← 行程表（复制为 行程表.md 启用）
@@ -115,4 +116,4 @@ Claude Cron 班次（错峰 10 分钟）读增量产物做 AI 判断：
 
 ## 八、部署
 
-完整步骤见 [README.md](README.md)。**推荐直接双击根目录 `一键部署.bat`**——自动装依赖、替换占位符、抓密钥、生成桌面快捷方式、注册计划任务。手工要点：改 config → 替换 `<SKILL_DIR>` 占位符 → 装依赖 → wechat-export 抓 key → 配 Windows 计划任务（导出 3 班 + 4 个分析班次）+ 4 个 Claude Cron → 前 3 天审核期调优。
+完整步骤见 [README.md](README.md)。**推荐直接双击根目录 `一键部署.bat`**——自动装依赖、替换占位符、抓密钥、生成桌面快捷方式、注册计划任务。手工要点：改 config → 替换 `<SKILL_DIR>` 占位符 → 装依赖 → wechat-export 抓 key → 配 Windows 计划任务（导出 3 班 + 4 个分析班次）+ 4 个 Claude Cron（在该目录开 Claude Code 即按 CLAUDE.md 自动创建）→ 前 3 天审核期调优。

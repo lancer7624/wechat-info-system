@@ -33,7 +33,7 @@ python -c "import frida, Crypto, win11toast, requests, keyboard, sounddevice, nu
    - 微信 ≥ 4.1.14：wcdb 只读扫描——微信保持登录，会弹一次 UAC（向导自动提权，工具只读、不注入）
 6. 验证解密 + 首次导出
 7. 启动看板 + **桌面生成「微信看板」快捷方式**（以后双击即开）
-8. 注册 7 个 Windows 计划任务，最后打印一段 Claude Cron 文本——复制发给 Claude Code 即完成定时分析配置
+8. 注册 7 个 Windows 计划任务，最后打印 Claude Cron 说明——包内已附 `CLAUDE.md`，在该目录打开 Claude Code 即自动创建这 4 个 Cron（也可复制那段文本发给它手动建）
 
 > 向导可反复运行：已完成的步骤秒过；整个文件夹搬到新路径后重跑一次会自动修正所有旧路径。
 > 跑完还剩两件非自动化小事：按你的场景改 config.json 的公众号/群聊名单；改 分类规则.md 的 ⚙️ 标注处。
@@ -120,7 +120,7 @@ foreach ($j in @(@("1210","noon"),@("1810","evening"),@("2100","trip"),@("2210",
 
 ### 6. 配置 Claude Cron（脑子活）
 
-在 Claude Code 会话里让 Claude 建 4 个 Cron（会话级，Claude 关闭即失效，每次新会话让它检查重建）：
+包内已附 `CLAUDE.md`——在该目录打开 Claude Code 的新会话时，它会**自动检查并创建下面这 4 个 Cron**（会话级，Claude 关闭即失效，每次新会话自动检查重建），无需手动粘贴；也可把文末那段直接发给 Claude 手动建（等效）：
 
 | Cron 表达式 | 班次 | 干什么 |
 |------------|------|--------|
@@ -129,7 +129,7 @@ foreach ($j in @(@("1210","noon"),@("1810","evening"),@("2100","trip"),@("2210",
 | `0 21 * * *` | 行程 | 按 prompts/prompt_trip.md：明天+未来3天行程提醒 |
 | `10 22 * * *` | 日报 | 按 prompts/prompt_daily.md：日报五件套+复盘底稿 |
 
-把下面这段直接发给 Claude 让它建（路径换成你的安装目录）：
+（备选）把下面这段直接发给 Claude 让它建（路径换成你的安装目录）：
 
 ```text
 请建 4 个会话级 Cron：

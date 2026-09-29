@@ -595,6 +595,17 @@ def wechat_running():
 
 # ---------------------------------------------------------------- 步骤 S0-S2
 
+def detect_claude():
+    """找 claude.exe：VSCode 扩展优先，其次 PATH；找不到返回 None。"""
+    up = os.environ.get("USERPROFILE") or os.path.expanduser("~")
+    hits = glob.glob(os.path.join(up, ".vscode", "extensions",
+                                  "anthropic.claude-code-*",
+                                  "resources", "native-binary", "claude.exe"))
+    if hits:
+        return sorted(hits)[-1]
+    return shutil.which("claude")
+
+
 def s0_selfcheck():
     C.step("S0", "环境自检")
     if os.name != "nt":
@@ -624,6 +635,12 @@ def s0_selfcheck():
     except Exception:
         C.err("当前目录不可写（权限不足），请把包放到有写权限的目录再跑。")
         return False
+    cexe = detect_claude()
+    if cexe:
+        C.ok("Claude Code: " + cexe)
+    else:
+        C.warn("没检测到 Claude Code（claude.exe）——分析班次会失败。")
+        C.info("装好 Claude Code 并登录（或配 ANTHROPIC_* 环境变量）即可；见 README 常见问题。")
     C.ok("自检通过")
     return True
 
@@ -783,6 +800,7 @@ def build_replacements(wechat, acct):
             reps.append((r"C:\Program Files\Tencent\Weixin\Weixin.exe",
                          wechat["exe"], "wechat-export/*.py", "微信 EXE"))
     reps.append(("<SKILL_DIR>", ROOT, "prompts/*.md", "技能目录"))
+    reps.append(("<SKILL_DIR>", ROOT, "CLAUDE.md", "会话守则"))
     return reps
 
 
@@ -898,6 +916,7 @@ def s4_scaffold(wechat, acct, state):
         tokens = ["<SKILL_DIR>", "YOURWXID", "YOURNAME"]
         bad = []
         for path in (glob.glob(os.path.join(ROOT, "prompts", "*.md"))
+                     + glob.glob(os.path.join(ROOT, "CLAUDE.md"))
                      + glob.glob(os.path.join(ROOT, "wechat-export", "*.py"))):
             try:
                 with open(path, encoding="utf-8") as f:
@@ -1261,8 +1280,12 @@ def s11_summary(py, wechat, acct, results):
     C.emit("  看板     : " + results.get("kanban", "-"))
     C.emit("  快捷方式 : " + results.get("shortcut", "-"))
     C.emit("  计划任务 : " + results.get("tasks", "-"))
+    cexe = detect_claude()
+    C.emit("  Claude Code : " + (cexe or "未检测到（见下方待办）"))
     C.emit("")
     C.emit("  待办清单：")
+    if not cexe:
+        C.emit("  · 没装 Claude Code -> 分析班次会失败；装好并登录（或配 ANTHROPIC_* 环境变量）即可，见 README 常见问题")
     if results.get("keys") in ("skipped", "fail", None, "exists") and results.get("verify") != "ok":
         C.emit("  · 密钥没配好 -> 见 README 第 4 节；配好后跑:")
         C.emit("    cd wechat-export && python decrypt_db.py --count && python daily_export.py")
@@ -1270,7 +1293,8 @@ def s11_summary(py, wechat, acct, results):
     C.emit("  · 编辑 分类规则.md：所有 ⚙️ 标注处改成你的场景")
     C.emit("  · config.json 的 vault目录 / whisper模型目录（用知识库/录音转写才需要）")
     C.emit("")
-    C.emit("  Claude Cron（会话级，把下面这段直接发给 Claude Code 建）：")
+    C.emit("  Claude Cron（会话级）：在该目录打开 Claude Code 的新会话会按 CLAUDE.md 自动创建；")
+    C.emit("  也可把下面这段直接发给它手动建（等效）：")
     C.emit("  " + "-" * 60)
     txt = ("请建 4 个会话级 Cron：\n"
            "10 12 * * * -> 读 " + ROOT + "\\prompts\\prompt_noon.md 并严格按其流程执行\n"
@@ -1292,7 +1316,8 @@ def heal(state):
     if not old_root or old_root == ROOT:
         return
     C.info("检测到安装目录变化: %s -> %s，自愈已替换的绝对路径…" % (old_root, ROOT))
-    for path in glob.glob(os.path.join(ROOT, "prompts", "*.md")):
+    for path in (glob.glob(os.path.join(ROOT, "prompts", "*.md"))
+                 + glob.glob(os.path.join(ROOT, "CLAUDE.md"))):
         try:
             with open(path, encoding="utf-8", newline="") as f:
                 t = f.read()
