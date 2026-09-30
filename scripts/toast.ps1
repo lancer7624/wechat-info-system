@@ -1,4 +1,4 @@
-# 气泡提示：recorder.py 调用，不抢焦点，几秒自动消失
+﻿# 气泡提示：recorder.py 调用，不抢焦点，几秒自动消失
 param([string]$Title, [string]$Msg)
 Add-Type -AssemblyName System.Windows.Forms
 $n = New-Object System.Windows.Forms.NotifyIcon

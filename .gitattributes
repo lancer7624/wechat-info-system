@@ -1,4 +1,5 @@
-# Windows 批处理 / PowerShell 脚本：原样保留字节（CRLF + GBK 编码），禁止行尾与编码转换
+# Windows 批处理（.bat/.cmd）：GBK + CRLF；PowerShell 脚本（.ps1）：UTF-8 with BOM + CRLF
+# （PS 5.1 对无 BOM 的 .ps1 按系统 ANSI 解码，中文乱码会炸脚本；两类脚本都原样保留字节，禁止 Git 转行尾）
 *.bat -text
 *.ps1 -text
 *.cmd -text

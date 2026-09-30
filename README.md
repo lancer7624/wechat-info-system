@@ -175,6 +175,13 @@ foreach ($j in @(@("1210","noon"),@("1810","evening"),@("2100","trip"),@("2210",
 ## 四、常见问题
 
 - **计划任务每天返回码 1、日志不写**：大概率是用 `schtasks /TR` 包了 cmd；用 PowerShell 的 Register-ScheduledTask 重建
+- **.ps1 一跑就报 `The string is missing the terminator` 之类解析错误 / 中文乱码 / 计划任务一直返回码 1**：脚本是 UTF-8 **不带 BOM** 存的（多数编辑器、AI 生成的默认如此），Windows PowerShell 5.1（计划任务里直接写 `powershell` 用它）会按系统 ANSI 代码页（中文系统 = GBK）解码——中文注释/字符串的字节被拆错，引号配对失败，整个脚本解析都过不去（现场：录音保活脚本 `recorder_keepalive.ps1` 的每小时计划任务每次都退 1）。解法：把 .ps1 一律转存为 **UTF-8 with BOM + CRLF**：
+  ```powershell
+  $p = "D:\wechat-assistant\recorder_keepalive.ps1"   # 换成实际路径
+  $t = [IO.File]::ReadAllText($p, [Text.Encoding]::UTF8)
+  [IO.File]::WriteAllText($p, ($t -replace "`r?`n", "`r`n"), (New-Object Text.UTF8Encoding $true))
+  ```
+  ⚠️ 别和 .bat 搞混：批处理要 **GBK + CRLF**，PowerShell 要 **UTF-8 with BOM + CRLF**——两类脚本在 `.gitattributes` 里都禁止 Git 转换行尾。PowerShell 7（`pwsh`）默认按 UTF-8 读、不中招，踩坑的只有 5.1
 - **`ModuleNotFoundError: No module named 'Crypto'`（或 frida/zstandard 等）**：依赖装到了另一个 Python。`python -m pip install ...` 重装，并把计划任务/命令里的解释器换成装了依赖那个的完整路径（`where python` 查）
 - **班次日志出现 `'python' 不是内部或外部命令` 或 exit=9009**：本机 Python 没进 PATH（安装时没勾 Add python.exe to PATH）。一键部署会自动把所选解释器写进 `scripts\python_path.txt`，`run_analysis.bat` 优先用它、并把它前置进 PATH（智能体在班次里跑 `python verify_entries.py` 等命令也因此可用）；手工部署补一个同名文件、内容一行解释器完整路径即可，或把 Python 加进 PATH
 - **用别的智能体（Gemini CLI / Codex CLI / Cursor Agent / Aider / opencode 等）**：headless 班次的「大脑」不绑死 Claude Code。想固定用哪个，在 config.json 顶层加「智能体」节，例如：
