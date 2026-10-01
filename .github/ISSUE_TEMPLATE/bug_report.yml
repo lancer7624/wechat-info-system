@@ -1,0 +1,77 @@
+name: Bug 报告
+description: 部署或使用中遇到的问题
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **⚠️ 发帖前先脱敏**：不要粘贴真实群名、公众号名、微信 wxid、Windows 用户名、聊天记录原文、飞书 webhook 或任何密钥。日志贴报错段落即可，路径里的用户名可打码。
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: 问题描述
+      description: 发生了什么？你期望的结果是什么？
+    validations:
+      required: true
+
+  - type: dropdown
+    id: stage
+    attributes:
+      label: 卡在哪一步
+      options:
+        - 一键部署向导 / 手工部署
+        - 抓 DB 密钥（Frida / wcdb-key-tool）
+        - 解密与导出（decrypt_db / daily_export / export_biz）
+        - 看板（打不开 / 数据不对）
+        - 分析班次（智能体没跑 / 结果不对）
+        - 计划任务或会话 Cron
+        - 飞书推送
+        - 其它
+    validations:
+      required: true
+
+  - type: input
+    id: wechat-version
+    attributes:
+      label: 微信版本
+      description: '微信 → 设置 → 关于微信'
+      placeholder: '例如 4.1.14.19'
+    validations:
+      required: true
+
+  - type: input
+    id: python-version
+    attributes:
+      label: Python 版本与完整路径
+      description: '命令行跑 where python 和 python -V。多版本机器务必写完整路径——依赖装到另一个 Python 是头号坑'
+      placeholder: '例如 3.12.10 D:\Python312\python.exe'
+    validations:
+      required: true
+
+  - type: input
+    id: agent
+    attributes:
+      label: 用的哪个命令行智能体
+      placeholder: 'Claude Code / Gemini CLI / Codex CLI / Cursor Agent / Aider / opencode / 还没装'
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 报错信息 / 日志
+      description: '直接粘贴报错文字（记得去隐私）。班次问题看 analysis.log 尾部'
+      render: text
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: 自查
+      options:
+        - label: 已看过 README 的「常见问题」
+          required: false
+        - label: 内容已脱敏（无真实群名 / wxid / 用户名 / 密钥 / 私人路径）
+          required: true

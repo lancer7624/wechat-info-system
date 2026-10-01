@@ -201,3 +201,11 @@ foreach ($j in @(@("1210","noon"),@("1810","evening"),@("2100","trip"),@("2210",
 - **班次失败了会通知吗**：会。智能体自动重试（隔 60 秒）仍失败时推一条飞书告警（`⚠ 微信班次失败`，带班次名和退出码），排查看 `analysis.log` 尾部；成功和"没新消息"都不打扰。链路自测：`python scripts\notify_fail.py noon 5 --dry`（只打印；去掉 `--dry` 会真推一条）
 - **headless 班次没跑**：先看 analysis.log 尾部报错；走 Claude Code 时再检查会话级 Cron 是否存活（会话一关就死，让 Claude 每次新会话开始时检查重建），用其它智能体无此机制、靠计划任务即可
 - **headless 班次日志写 ANTHROPIC_* MISSING 或认证失败（仅 Claude Code 通道）**：headless 用 Claude Code 登录态或环境变量。官方订阅登录即可用；第三方 API 端点把 `ANTHROPIC_BASE_URL` / `ANTHROPIC_AUTH_TOKEN` / `ANTHROPIC_MODEL` 配在系统环境变量里，或 VSCode settings.json 的 `claude-code.environmentVariables`（`scripts\load_env.py` 会自动读取注入）
+
+## 五、参与贡献
+
+欢迎 Issue 和 PR——其它智能体的适配、新场景的 prompt、踩坑修复都收。
+
+- **提 Issue**：用仓库的模板，带上环境信息（微信版本 / Python 完整路径 / 用的智能体 / 卡在哪一步）；**别贴真实群名、wxid、聊天记录、密钥**，脱敏后粘贴
+- **提 PR**：fork → 改动 → 按模板自查 → 开 PR。红线是**脱敏**（示例一律用占位符）和**脚本编码**（bat=GBK+CRLF、ps1=UTF-8 BOM+CRLF）；细则见 [CONTRIBUTING.md](CONTRIBUTING.md)
+- **协议**：MIT（见 [LICENSE](LICENSE)）——随便用、随便改，保留版权声明即可
