@@ -8,3 +8,6 @@ sounddevice         # 音频采集（录音）
 numpy               # 音频处理
 faster-whisper      # 本地语音转写（录音转文字；不装则录音功能不可用）
 zstandard           # zstd 解压（微信数据）
+cryptography        # 微信机器人：图片/文件加解密（AES-128-ECB；不装则只能发文本）
+qrcode              # 微信机器人：扫码配对生成二维码
+pillow              # 二维码图片渲染（qrcode 依赖）

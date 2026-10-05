@@ -33,14 +33,18 @@ wechat-assistant-skill/
 ├── config.example.json   ← 配置模板（复制为 config.json 后填写）
 ├── 分类规则模板.md        ← 分类规则（复制为 分类规则.md 后按你的场景改写）
 ├── 行程表模板.md          ← 行程表（复制为 行程表.md 启用）
-├── prompts/              ← 四个 headless 班次的提示词
+├── prompts/              ← headless 班次提示词（noon/evening/trip/daily + wxchat 微信助手）
 │   ├── prompt_noon.md    ←   午班分析（12:10）
 │   ├── prompt_evening.md ←   晚班分析（18:10）
 │   ├── prompt_trip.md    ←   行程提醒（21:00）
 │   └── prompt_daily.md   ←   日报班（22:10）
 ├── scripts/              ← 机器活脚本
+│   ├── notify.py         ←   统一推送入口（按 config「手机推送渠道」选飞书/微信/双通道）
 │   ├── feishu_notify.py  ←   飞书群机器人推送（webhook 只存 config.json）
-│   ├── feishu_push.py    ←   推送命令行封装
+│   ├── feishu_push.py    ←   飞书推送命令行封装
+│   ├── wx_bot.py         ←   微信机器人通道（腾讯 iLink：文本/图片/文件收发 + 扫码配对）
+│   ├── wx_push.py        ←   微信推送命令行封装（--image / --file 带附件）
+│   ├── wx_serve.py       ←   微信双向服务：收你的消息 → 命令行智能体作答 → 回复（可带附件）
 │   ├── notify_fail.py    ←   班次失败飞书告警（run_analysis.bat 重试仍败时调）
 │   ├── verify_entries.py ←   写看板前的核对闸门（数据核实铁律执行器）
 │   ├── recorder.py       ←   看板静态服务 + 录音热键（Ctrl+Alt+R）+ whisper 转录
@@ -66,7 +70,7 @@ wechat-assistant-skill/
 每日 12:00/18:00/22:00 计划任务：快照 → 解密 → 导出 Markdown → export\YYYY-MM-DD\
     ↓
 智能体班次（计划任务触发，错峰 10 分钟；Claude Code 另有会话 Cron 通道）读增量产物做 AI 判断：
-    ├─ 📢 时效性重要（活动/截止/改时间/@我）→ toast + 飞书推送
+    ├─ 📢 时效性重要（活动/截止/改时间/@我）→ toast + 推送（notify.py：按「手机推送渠道」选飞书 / 微信机器人）
     ├─ 📚 知识性内容 → 线二知识库
     └─ 普通消息 → 当日简报，日报汇总
     ↓
@@ -75,12 +79,22 @@ wechat-assistant-skill/
 看板（本地 HTTP 服务）展示；日报五件套 22:10 生成；行程 21:00 汇总提醒
 ```
 
+### 微信机器人通道（可选）
+
+推送通道可切到**腾讯官方 iLink 微信机器人**：扫码把机器人加成微信好友，之后通知直接落到微信，
+图片/文件也能推（`scripts\wx_bot.py` 内置协议实现：文本收发零依赖，附件要 cryptography）。
+config.json「手机推送渠道」填 `微信` 或 `双通道` 即生效——班次推送统一走 `scripts\notify.py`，不用改 prompts。
+
+`scripts\wx_serve.py` 是**双向**部分：常驻长轮询收你在微信发的消息（含图片/文件，自动从 CDN
+下载并解密），交给命令行智能体按 `prompts\prompt_wxchat.md` 作答后回给你；回复正文里单独一行写
+`[发图] 绝对路径` / `[发文件] 绝对路径` 就会当附件发出去。凭据只落账号目录（默认 `bot\`），不进日志、不入库。
+
 ## 四、时间轴总览
 
 | 时间 | 动作 |
 |------|------|
 | 12:00 / 18:00 / 22:00 | Windows 计划任务增量导出（wechat-export） |
-| 12:10 / 18:10 | 分析班次（命令行智能体）→ 重要信息 toast + 飞书通知 |
+| 12:10 / 18:10 | 分析班次（命令行智能体）→ 重要信息 toast + 推送（飞书 / 微信机器人） |
 | 21:00 | 行程汇总提醒（明天安排 + 未来 3 天） |
 | 22:10 | 日报班：通知 + 日报五件套 + AI 复盘底稿 + 公众号入库 + 知识候选清单 |
 | 睡前 | 用户看日报写复盘 / 按录音键（Ctrl+Alt+R）口述 |
