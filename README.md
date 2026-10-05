@@ -10,10 +10,11 @@
 - 一个命令行智能体（自动探测，任选其一）：Claude Code（默认；自动找 VSCode 扩展里的 claude.exe，回退 PATH 里的 `claude`）/ Gemini CLI / Codex CLI / Cursor Agent / Aider / opencode——想固定用哪个或接任意 CLI，见常见问题「用别的智能体」
 - Obsidian（可选，线二知识库用；`winget install Obsidian.Obsidian` 装）
 - ffmpeg（可选，录音转 m4a 用）
+- 微信机器人（可选，把通知推到微信 / 在微信里指挥系统）：腾讯官方 iLink Bot，扫码配对即可，见「二、安装步骤 9」
 
 ```powershell
-python -m pip install frida pycryptodome win11toast requests keyboard sounddevice numpy faster-whisper zstandard
-python -c "import frida, Crypto, win11toast, requests, keyboard, sounddevice, numpy, faster_whisper, zstandard; print('依赖 OK')"
+python -m pip install frida pycryptodome win11toast requests keyboard sounddevice numpy faster-whisper zstandard cryptography qrcode pillow
+python -c "import frida, Crypto, win11toast, requests, keyboard, sounddevice, numpy, faster_whisper, zstandard, cryptography; print('依赖 OK')"
 ```
 
 > **多版本 Python 的机器注意**：用 `python -m pip` 保证依赖装进 `python` 命令对应的解释器；装完 `where python` 记下它的完整路径，第 5 步计划任务里直接填完整路径——防 PATH 里别的 python 抢位报 `ModuleNotFoundError`。一键部署会把所选解释器额外记到 `scripts\python_path.txt`，分析班次（`run_analysis.bat`）优先用它并把其目录前置进 PATH——机器没勾 Add to PATH 也不影响班次。
@@ -156,6 +157,54 @@ foreach ($j in @(@("1210","noon"),@("1810","evening"),@("2100","trip"),@("2210",
 - 录音：全局热键 `Ctrl+Alt+R` 或看板按钮，停止后自动转文字 + 入库复盘
 - 看板由 recorder.py 常驻进程提供本地服务（127.0.0.1:8710），挂了就重开
 
+### 9. 接通微信机器人（可选）
+
+默认通知走飞书 webhook。想让通知**直接落到微信**（图片/文件也能推），或者想在微信里
+**直接指挥系统**（问待审、回复过审、要文件），就接通这条通道。
+
+用的是腾讯官方 **iLink Bot API**：不 hook 微信进程、不碰本地消息库，扫码把机器人加成你的
+微信好友即可。文本收发是纯标准库，图片/文件要 `cryptography`。
+
+```powershell
+# 1. 扫码配对（弹出二维码，手机微信扫 → 确认添加机器人）
+python scripts\wx_bot.py --login
+python scripts\wx_bot.py --status                     # 看配对状态 / 令牌 / 媒体依赖
+
+# 2. 验通道（发给自己）
+python scripts\wx_bot.py --send "测试一下"
+python scripts\wx_bot.py --send-image D:\pics\a.png    # 验图片
+python scripts\wx_bot.py --send-file D:\docs\a.pdf     # 验文件
+```
+
+配好后在 `config.json` 里改一行就切换推送通道：
+
+```json
+"手机推送渠道": "微信",
+"微信机器人": { "启用": true }
+```
+
+班次的推送统一走 `scripts\notify.py`，按「手机推送渠道」自动选通道（`飞书` / `微信` / `双通道`），
+**不用改 prompts**。要带附件就 `python scripts\notify.py "标题" "内容" --image 路径 --file 路径`
+（附件只有微信通道支持，飞书 webhook 是纯文本）。
+
+**双向（可选）**：让机器人在微信里回你的话——
+
+```powershell
+python scripts\wx_serve.py     # 前台常驻；或双击根目录「启动微信机器人.cmd」（推荐）
+```
+
+> 这是个**常驻**服务：窗口挂着别关，或把它注册成开机计划任务。它负责持续刷新 context_token，
+> 也负责接你在微信里的消息。没跑它的时候，系统**还能正常推送**（发送会自动退化成一次性同步发），
+> 只是收不到你的指令。
+
+你发文字/图片/文件过去，它会调本机命令行智能体（同 `agent_runner.py` 那套自动探测）作答，
+回复里写 `[发图] 绝对路径` / `[发文件] 绝对路径` 就能把文件发回给你。提示词在
+`prompts\prompt_wxchat.md`（已写好：能答看板内容、发待审清单、处理「全过/删N号」过审）。
+
+> **第一条消息必须由你发起**：iLink 要求每条外发消息带上「最新 context_token」，而它只有你
+> 先给机器人发过消息才会产生。配对完在微信里给机器人发一句「状态」，收到回执就说明通道通了。
+> 长轮询进程负责持续刷新这个令牌；没有常驻进程时，发送会自动退化成一次性同步发。
+
 ## 三、脱敏说明
 
 本脱敏版已做以下处理：
@@ -201,6 +250,12 @@ foreach ($j in @(@("1210","noon"),@("1810","evening"),@("2100","trip"),@("2210",
 - **班次失败了会通知吗**：会。智能体自动重试（隔 60 秒）仍失败时推一条飞书告警（`⚠ 微信班次失败`，带班次名和退出码），排查看 `analysis.log` 尾部；成功和"没新消息"都不打扰。链路自测：`python scripts\notify_fail.py noon 5 --dry`（只打印；去掉 `--dry` 会真推一条）
 - **headless 班次没跑**：先看 analysis.log 尾部报错；走 Claude Code 时再检查会话级 Cron 是否存活（会话一关就死，让 Claude 每次新会话开始时检查重建），用其它智能体无此机制、靠计划任务即可
 - **headless 班次日志写 ANTHROPIC_* MISSING 或认证失败（仅 Claude Code 通道）**：headless 用 Claude Code 登录态或环境变量。官方订阅登录即可用；第三方 API 端点把 `ANTHROPIC_BASE_URL` / `ANTHROPIC_AUTH_TOKEN` / `ANTHROPIC_MODEL` 配在系统环境变量里，或 VSCode settings.json 的 `claude-code.environmentVariables`（`scripts\load_env.py` 会自动读取注入）
+
+- **微信机器人配对扫不出来 / 二维码一直过期**：`python scripts\wx_bot.py --login` 会把二维码存成 `账号目录\qr.png` 并自动打开；没装 qrcode 就直接打印一条链接，手机微信里打开也能扫。反复过期就重跑一次
+- **微信发不出图片/文件，提示缺 cryptography**：`python -m pip install cryptography`。文本收发是纯标准库、不需要它，只有附件才要
+- **微信推送报错「上下文令牌无」/ 发了没反应**：iLink 要求你**先给机器人发过消息**才有 context_token。在微信里给机器人发一句「状态」，能收到回执就说明通道通了
+- **在微信里给机器人发消息没人回**：①双向服务没起（`python scripts\wx_serve.py`）；②config.json「微信机器人」→「双向」→「启用」是 false；③发消息的号不在「双向」→「白名单」里（白名单留空 = 只服务配对时扫码的那个号）
+- **想飞书和微信同时收**：config.json「手机推送渠道」填 `双通道`（班次推送走 notify.py，会自动两边都发）
 
 ## 五、参与贡献
 

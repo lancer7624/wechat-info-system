@@ -5,6 +5,14 @@ image_key.json
 wechat-export/db_key.json
 wechat-export/image_key.json
 
+# 微信机器人通道的账号凭据与运行状态（默认落 bot/，配到别处则不在库内）
+bot/
+account.json
+context_tokens.json
+sync_buf.txt
+chat_history.json
+media_msgs.log
+
 # 私人聊天数据与运行产物
 wechat-export/export/
 wechat-export/logs/
