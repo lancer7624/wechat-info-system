@@ -38,6 +38,7 @@ wechat-assistant-skill/
 │   ├── prompt_evening.md ←   晚班分析（18:10）
 │   ├── prompt_trip.md    ←   行程提醒（21:00）
 │   └── prompt_daily.md   ←   日报班（22:10）
+├── 启动微信机器人.cmd     ← 双击起微信双向服务（收你的指令 + 回执）
 ├── scripts/              ← 机器活脚本
 │   ├── notify.py         ←   统一推送入口（按 config「手机推送渠道」选飞书/微信/双通道）
 │   ├── feishu_notify.py  ←   飞书群机器人推送（webhook 只存 config.json）
