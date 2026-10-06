@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light"><title>会话笺 · 微信助手</title>
+<link rel="stylesheet" href="style.css"><script type="module" src="app.js"></script><script type="module" src="card-motion.js"></script>
+</head><body>
+<svg class="svg-definitions" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+<symbol id="i-chevron" viewBox="0 0 20 20"><path d="m6 8 4 4 4-4"/></symbol>
+<symbol id="i-fold" viewBox="0 0 20 20"><path d="M6 4h8v12l-4-3-4 3V4Z"/></symbol>
+<symbol id="i-minimize" viewBox="0 0 20 20"><path d="M5 10h10"/></symbol>
+<symbol id="i-close" viewBox="0 0 20 20"><path d="m5 5 10 10M15 5 5 15"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 20 20"><path d="M4 10h12m-5-5 5 5-5 5"/></symbol>
+<symbol id="i-search" viewBox="0 0 20 20"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4 4"/></symbol>
+</svg>
+<div id="bookmark" class="bookmark" hidden>
+<div class="bookmark-grip pywebview-drag-region" title="拖动书签"><span></span><span></span></div>
+<button id="expand-button" class="bookmark-open" aria-label="展开会话笺"><span class="seal">笺</span><span id="bookmark-status" class="status-dot"></span></button>
+</div>
+<div id="card-stage" class="card-stage"><div id="app" class="app-shell">
+<header class="app-header">
+<div class="masthead">
+<div class="titlebar"><div class="brand"><button id="menu-button" class="seal menu-toggle" aria-label="打开会话笺菜单" aria-haspopup="dialog">笺</button><span class="brand-drag pywebview-drag-region">会话笺</span></div>
+<div class="window-actions"><button id="minimize-button" class="icon-button" aria-label="最小化到任务栏" title="最小化到任务栏"><svg class="icon"><use href="#i-minimize"/></svg></button><button id="collapse-button" class="icon-button" aria-label="收起为书签" title="收起为小书签"><svg class="icon"><use href="#i-fold"/></svg></button><button id="quit-button" class="icon-button" aria-label="退出助手" title="退出"><svg class="icon"><use href="#i-close"/></svg></button></div></div>
+<div class="conversation-heading"><img class="courier" src="assets/courier-magpie.png" alt=""><button id="choose-contact" class="contact-heading" aria-label="选择会话"><span id="contact-name">选择会话</span><svg class="icon"><use href="#i-chevron"/></svg></button><button id="follow-button" class="follow-button" aria-pressed="true" title="点击固定当前会话"><span class="follow-indicator"></span><span id="follow-label">跟随</span></button></div>
+</div>
+<div class="freshness"><span id="snapshot-label">等待读取</span><button id="refresh-button" class="text-button" title="立即检查本机记录；平时自动同步">立即检查</button></div>
+<span id="sync-label" hidden></span><p id="binding-notice" class="binding-notice" hidden></p>
+<div class="reply-controls"><div class="mode-switch" role="group" aria-label="回复模式"><button id="mode-suggest" aria-pressed="true">建议</button><button id="mode-auto" aria-pressed="false">自动</button></div><label class="scene-picker"><span id="scene-label">待确认</span><select id="quick-scene" aria-label="当前会话回复风格"><option value="auto">自动判断</option><option value="daily">日常</option><option value="work">职场</option><option value="customer">客户</option><option value="romance">情感恋爱</option></select></label></div>
+<p id="mode-description" class="mode-description">生成后填入微信，由你发送</p>
+<div id="automatic-strip" class="automatic-strip" hidden><span id="automatic-label">自动聊天</span><button id="auto-pause" class="text-button">暂停全部</button></div>
+</header>
+<main id="main-content" class="main-content">
+<section class="conversation-section conversation-status" aria-label="消息更新状态"><span class="status-orbit" aria-hidden="true"></span><strong id="conversation-count">等待当前会话</strong><p id="conversation-detail">在微信中打开一个会话</p></section>
+<section id="drafts-area" class="drafts-area" hidden><div class="section-caption"><label for="draft-short">回复</label><span class="page-rule" aria-hidden="true"></span><button id="copy-short" class="text-button" title="复制草稿">复制</button></div><textarea id="draft-short" class="draft-input" rows="3" maxlength="20000" aria-label="回复草稿"></textarea><p id="reply-meta" class="section-note" hidden></p><p id="draft-save-state" class="section-note" hidden></p></section>
+</main>
+<footer class="app-footer"><input id="goal-input" class="goal-input" type="text" maxlength="2000" aria-label="回复要求" placeholder="想怎么回（可选）" autocomplete="off"><div id="status-line" class="status-line" role="status" aria-live="polite" hidden><span id="status-text"></span></div><button id="suggest-button" class="primary-button">生成建议<svg class="icon"><use href="#i-arrow"/></svg></button></footer>
+</div></div>
+<dialog id="contacts-dialog" class="sheet-dialog" aria-labelledby="contacts-title"><div class="dialog-heading"><h2 id="contacts-title">选择会话</h2><button class="icon-button" data-close="contacts-dialog" aria-label="关闭会话列表"><svg class="icon"><use href="#i-close"/></svg></button></div><div class="contact-search"><svg class="icon"><use href="#i-search"/></svg><input id="contact-search" type="search" autocomplete="off" placeholder="联系人或群聊" aria-label="搜索会话"></div><div id="contact-list" class="contact-list"></div></dialog>
+<dialog id="consent-dialog" class="consent-dialog" aria-labelledby="consent-title"><h2 id="consent-title">首次使用模型</h2><p>将发送<span id="consent-source">当前会话</span><span id="consent-scope">近 7 天、最多 80 条可读消息及回复要求，并参考本会话最多 12 条相关历史原文、8 条已发送改稿与口吻偏好。</span></p><div class="consent-destination"><strong id="consent-model"></strong><small id="consent-address"></small></div><p>本机代理可能转交外部模型；本次授权该会话使用此服务，点击按钮后才处理。</p><p id="consent-error" class="inline-error" hidden></p><div class="consent-actions"><button id="consent-cancel" class="quiet-button">暂不使用</button><button id="consent-allow" class="primary-button">允许并继续</button></div></dialog>
+<div id="toast" class="toast" role="status" hidden></div>
+<dialog id="image-dialog" class="sheet-dialog image-dialog" aria-labelledby="image-title"><div class="dialog-heading"><h2 id="image-title">图片</h2><button id="image-close" class="icon-button" aria-label="关闭图片"><svg class="icon"><use href="#i-close"/></svg></button></div><p id="image-status" class="section-note" role="status"></p><img id="image-preview" class="local-image-preview" alt="当前会话图片" hidden></dialog>
+<dialog id="menu-dialog" class="sheet-dialog menu-dialog" aria-labelledby="menu-title"><div class="dialog-heading"><h2 id="menu-title">会话笺</h2><button class="icon-button" data-close="menu-dialog" aria-label="关闭菜单"><svg class="icon"><use href="#i-close"/></svg></button></div><button id="today-menu-item" class="menu-item">总结今天<span>当前群聊或联系人 · 仅当天</span></button><button id="today-open-menu-item" class="menu-item" hidden>查看当天总结<span id="today-summary-detail"></span></button><button id="style-menu-item" class="menu-item">我的口吻<span>习惯与会话场景</span></button><button id="auto-menu-item" class="menu-item">自动聊天<span>指定私聊 · 需要时接管</span></button><button id="memory-menu-item" class="menu-item">会话记忆<span>前情与这个人的口吻</span></button><button id="author-workbench-menu-item" class="menu-item" hidden>当天会话工作台<span>多选总结 · 信息看板</span></button><button id="workbench-menu-item" class="menu-item">完整看板<span>原文与信息整理</span></button></dialog>
+<dialog id="style-dialog" class="sheet-dialog style-dialog" aria-labelledby="style-title">
+<div class="dialog-heading"><h2 id="style-title">我的口吻</h2><button class="icon-button" data-close="style-dialog" aria-label="关闭我的口吻"><svg class="icon"><use href="#i-close"/></svg></button></div>
+<p id="style-demo-note" class="style-demo-note" hidden>虚构口吻示例 · 不连接微信或模型</p>
+<div class="style-toggle-row"><label for="style-enabled">回复时参考我的口吻</label><input id="style-enabled" type="checkbox" checked></div>
+<p id="style-summary" class="style-summary">尚未学习</p><p id="style-range" class="style-detail"></p>
+<div id="style-profiles" class="style-profiles" aria-label="已学习惯"></div>
+<label class="style-field-label" for="style-notes">补充口吻偏好</label><textarea id="style-notes" class="style-notes" rows="3" maxlength="500" placeholder="例如：日常可以轻松一点，工作直接说重点。"></textarea><p id="style-notes-count" class="style-detail style-count">0 / 500</p>
+<div class="style-scene-row"><label class="style-field-label" for="reply-scene">当前会话场景</label><select id="reply-scene"><option value="auto">自动</option><option value="daily">日常</option><option value="work">职场</option><option value="customer">客户</option><option value="romance">情感恋爱</option></select></div><p id="style-scene-note" class="style-detail">只应用于当前会话，选择后立即保存。</p>
+<p id="style-status" class="style-status" role="status" aria-live="polite"></p>
+<div class="style-actions"><button id="style-learn" class="quiet-button">重新学习</button><button id="style-save" class="primary-button">保存偏好</button></div>
+<p class="style-detail style-learning-note">学习时会从当前账号已导出的记录中选取本人原文，最多 240 条、20,000 字；不代表全历史。只总结表达习惯，不训练模型权重。</p><p id="style-model" class="style-detail"></p>
+</dialog>
+<dialog id="memory-dialog" class="sheet-dialog style-dialog memory-dialog" aria-labelledby="memory-title">
+<div class="dialog-heading"><h2 id="memory-title">会话记忆</h2><button class="icon-button" data-close="memory-dialog" aria-label="关闭会话记忆"><svg class="icon"><use href="#i-close"/></svg></button></div>
+<p id="memory-source" class="style-summary"></p><p id="memory-summary" class="style-detail"></p>
+<div class="style-toggle-row"><label for="memory-enabled">记住并参考会话前情</label><input id="memory-enabled" type="checkbox" checked></div>
+<div class="style-toggle-row memory-feedback-toggle"><label for="memory-feedback">学习实际已发送的改稿</label><input id="memory-feedback" type="checkbox" checked></div>
+<label class="style-field-label" for="memory-notes">这个人的口吻偏好</label><textarea id="memory-notes" class="style-notes" rows="3" maxlength="500" placeholder="例如：和他可以接梗，别用亲昵称呼；谈工作时简洁一些。"></textarea>
+<p id="memory-count" class="style-detail style-count">0 / 500</p><p id="memory-status" class="style-status" role="status" aria-live="polite"></p>
+<div class="style-actions"><button id="memory-save" class="primary-button">保存偏好</button><button id="memory-clear" class="quiet-button">清空记忆</button></div>
+<p class="style-detail">清空只移除助手前情与已学改稿，保留口吻设置和微信原文。匹配明确的已发送修改才作为示例；仅填入、复制或取消不会算已发送。</p>
+<h3 class="memory-section-title">已发送改稿</h3><div id="memory-examples" class="memory-list"></div>
+<h3 class="memory-section-title">记住的原文</h3><p class="style-detail">固定重要前情，下次按需参考。此处显示固定原文及最近 16 条。</p><div id="memory-messages" class="memory-list"></div>
+<p class="style-detail">记录与改稿核对在本机完成。点击生成时，才将相关历史、偏好和表达示例交给已配置模型。</p>
+</dialog>
+<dialog id="auto-dialog" class="sheet-dialog style-dialog" aria-labelledby="auto-title">
+<div class="dialog-heading"><h2 id="auto-title">自动聊天</h2><button class="icon-button" data-close="auto-dialog" aria-label="关闭自动聊天"><svg class="icon"><use href="#i-close"/></svg></button></div>
+<p id="auto-source" class="style-summary"></p><p id="auto-detail" class="style-detail"></p>
+<p class="style-detail">启用后，自动参考你的口吻和本会话前情，生成并发送。保持微信在前台，只处理当前打开的指定私聊，连续消息先等 5 秒；其他联系人、群聊和公众号保持手动。</p>
+<p class="style-detail">遇到需要你决定的事、未解析内容或手写输入，会停下来交给你。顶部「暂停全部」可随时接管。发送结果不明确时不会自动重发。</p>
+<button id="auto-toggle" class="primary-button">启用此会话</button><p id="auto-error" class="style-status" role="status"></p>
+<p class="style-detail">只处理启用之后的新消息。重新启用前，请先查看微信里上次未确认的发送。启用期间的新消息会使用已授权的模型，最多每会话 12 次发送尝试／小时。</p>
+<h3 class="memory-section-title">最近发送核对</h3><div id="auto-history" class="memory-list"></div>
+</dialog>
+</body></html>
+

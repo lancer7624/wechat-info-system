@@ -3,3 +3,6 @@
 *.bat -text
 *.ps1 -text
 *.cmd -text
+
+# Imported-file manifests retain exact source bytes on every platform.
+conversation_engine/** -text

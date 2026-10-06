@@ -235,7 +235,7 @@
         <h1 id="appTitle">微信信息看板</h1>
         <div id="greeting" class="greeting"></div>
       </div>
-      <button id="styleBtn" class="btn">风格：正经</button>
+      <div><a class="btn" href="/conversations" id="conversationLink" style="display:none;text-decoration:none">当天会话</a> <button id="styleBtn" class="btn">风格：正经</button></div>
     </div>
     <div id="sourceNote" class="source-note" style="display:none"></div>
     <nav id="dateNav" class="date-nav"></nav>
@@ -243,7 +243,7 @@
 
   <main id="content" class="content"></main>
 
-  <footer class="footer">数据由系统每日自动更新 · 看板页面仅做展示</footer>
+  <footer class="footer" id="boardFooter">数据由系统每日自动更新 · 看板页面仅做展示</footer>
 
   <div id="detailModal" class="modal-overlay" onclick="if(event.target===this)closeModal()">
     <div class="modal-card">
@@ -467,7 +467,7 @@ function currentView(){
 }
 
 function renderBrief(brief, t){
-  const order = ['群聊','公众号'];
+  const order = ['群聊','私聊','公众号'];
   const blocks = [];
   for (const key of order){
     const arr = brief && brief[key];
@@ -672,7 +672,7 @@ function reviewSave(){
   const txt = el.value.trim();
   fetch(REC_API + '/review', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(window.workbenchToken ? {'X-Workbench-Token':window.workbenchToken} : {}) },
     body: JSON.stringify({ review_user: txt })
   }).then(r => { if (!r.ok) throw new Error(String(r.status)); return r.json(); })
     .then(() => {
@@ -690,7 +690,7 @@ function reviewCancel(){
 }
 
 /* ================= 录音控制（本地 HTTP 接口，recorder.py 常驻进程提供） ================= */
-const REC_API = 'http://127.0.0.1:8710';
+const REC_API = location.protocol === 'http:' ? location.origin : 'http://127.0.0.1:8710';
 
 function recBarHtml(){
   return '<div class="rec-bar">'
@@ -711,7 +711,8 @@ async function recPoll(){
     const btn = document.getElementById('recBtn');
     const st = document.getElementById('recStatus');
     if (btn){
-      btn.textContent = s.recording ? '⏹ 停止录音' : '🎙️ 开始录音';
+      btn.textContent = s.supported === false ? '录音暂未启用' : s.recording ? '⏹ 停止录音' : '🎙️ 开始录音';
+      btn.disabled = s.supported === false;
       btn.classList.toggle('recording', !!s.recording);
     }
     if (st) st.textContent = s.recording ? '🔴 录音中…' : '';
@@ -804,6 +805,9 @@ function showSourceNote(source){
 
 /* ================= 启动 ================= */
 async function init(){
+  if(location.protocol === 'http:'){
+    try {const meta=await fetchJson('/api/state');if(meta.app==='wechat-author-workbench'){window.workbenchToken=meta.token;document.getElementById('conversationLink').style.display='inline-block';document.getElementById('boardFooter').textContent='消息和总结由你手动更新 · 原文可随时核对';}}catch(e){}
+  }
   state.style = localStorage.getItem(STYLE_KEY) || 'plain';
   if (!['plain', 'casual', 'seagull'].includes(state.style)) state.style = 'plain';
   const res = await loadData();

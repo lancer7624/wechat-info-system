@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>当天会话 · 微信信息工作台</title>
+  <link rel="stylesheet" href="/conversation.css">
+  <script src="/conversation.js" defer></script>
+</head>
+<body>
+<header class="topbar"><div class="topbar-inner">
+  <div><h1>微信信息工作台</h1><p>把今天聊过的事，整理清楚。</p></div>
+  <nav><a href="/">信息看板</a><a class="active" href="/conversations" aria-current="page">当天会话</a><button id="open-note">笺 · 悬浮窗</button></nav>
+</div></header>
+<main>
+  <div class="page-heading"><div><h2>今天的聊天</h2><p id="capture-note">正在连接本机工作台…</p></div><button id="refresh" class="primary">更新今天</button></div>
+  <div id="notice" class="notice" role="status" aria-live="polite"></div>
+  <div class="workspace">
+    <aside class="card"><div class="list-heading"><h3>会话</h3><span id="source-count" class="badge">0</span></div><input id="search" type="search" placeholder="查找群聊或联系人" aria-label="查找会话"><div class="selection-tools"><label><input id="select-all" type="checkbox">全选今天有消息的会话</label><span id="selection-count">已选 0 个</span></div><div id="sources" class="sources"></div><button id="batch-summarize" class="primary" disabled>总结所选会话</button></aside>
+    <section class="detail">
+      <div id="batch-panel" class="card" hidden><div class="section-heading"><div><h3>批量总结</h3><p id="batch-status"></p></div><button id="stop-batch" hidden>停止后续总结</button></div><div id="batch-items" class="batch-items"></div></div>
+      <div class="card conversation-heading"><div><h2 id="source-name">先更新今天的聊天</h2><p id="source-status">使用已有接入配置，只读取当天消息。</p></div><span id="scene-label" class="badge">待确认</span></div>
+      <div class="card">
+        <div class="section-heading"><div><h3>当天总结</h3><p>只看今天，整理重点与需要跟进的事。</p></div><button id="summarize" class="primary" disabled>总结今天</button></div>
+        <div id="summary" class="summary empty">选择会话后，在这里查看今天的重点。已有总结会自动显示。</div>
+      </div>
+      <div class="card">
+        <div class="section-heading"><div><h3>回复建议</h3><p>根据今天最近的消息，生成一条可编辑的回复。</p></div><div class="mode-control"><span class="selected">建议模式</span><button disabled title="微信窗口联动验证完成后再开放">自动聊天 · 暂停</button></div></div>
+        <div class="style-row"><label for="scene">回复风格</label><select id="scene" disabled><option value="auto">根据近期话题判断</option value="daily">日常</option><option value="work">职场</option><option value="customer">客户</option><option value="romance">情感恋爱</option></select></div>
+        <p id="scene-reason" class="muted"></p>
+        <label for="goal">想怎么回 <span class="muted">（可不填）</span></label><input id="goal" maxlength="2000" placeholder="例如：简短确认一下时间">
+        <div class="reply-actions"><button id="generate" class="primary" disabled>生成建议</button><span id="reply-note" class="muted">生成后可编辑、复制，由你发送。</span></div>
+        <textarea id="draft" rows="4" placeholder="回复草稿会显示在这里" aria-label="回复草稿"></textarea>
+        <div class="draft-footer"><span id="reply-reason" class="muted"></span><button id="use-new" hidden>使用新建议</button><button id="copy" disabled>复制回复</button></div>
+      </div>
+      <div class="model-note"><p id="model-note"></p><label id="consent-wrap" hidden><input id="consent" type="checkbox">允许本次当前会话或已勾选会话的当天文字交给上述模型，用于总结或回复建议</label><p>目前通过会话列表切换。微信窗口跟随、自动填入与自动聊天仍暂停。</p></div>
+    </section>
+  </div>
+</main>
+</body>
+</html>

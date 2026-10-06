@@ -1,0 +1,11 @@
+<Project>
+  <PropertyGroup>
+    <NativeOutputRoot Condition="'$(NativeOutputRoot)' == ''">$(MSBuildThisFileDirectory)..\..\wechat-chat-analyzer-data\dotnet-build\</NativeOutputRoot>
+    <BaseIntermediateOutputPath>$(NativeOutputRoot)$(MSBuildProjectName)\obj\</BaseIntermediateOutputPath>
+    <BaseOutputPath>$(NativeOutputRoot)$(MSBuildProjectName)\bin\</BaseOutputPath>
+    <RestorePackagesPath>$(NativeOutputRoot)packages</RestorePackagesPath>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+</Project>

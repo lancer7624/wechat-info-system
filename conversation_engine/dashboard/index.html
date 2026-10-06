@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>会话笺 · 工作台</title>
+    <style>
+    __WECHAT_DASHBOARD_STYLES__
+    __WECHAT_DASHBOARD_FONTS__
+/* Bundled font: Noto Serif SC. Full license retained in this document.
+Copyright 2012 Google Inc. All Rights Reserved.
+
+This Font Software is licensed under the SIL Open Font License,
+Version 1.1.
+
+This license is copied below, and is also available with a FAQ at:
+http://scripts.sil.org/OFL
+
+-----------------------------------------------------------
+SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
+-----------------------------------------------------------
+
+PREAMBLE
+The goals of the Open Font License (OFL) are to stimulate worldwide
+development of collaborative font projects, to support the font
+creation efforts of academic and linguistic communities, and to
+provide a free and open framework in which fonts may be shared and
+improved in partnership with others.
+
+The OFL allows the licensed fonts to be used, studied, modified and
+redistributed freely as long as they are not sold by themselves. The
+fonts, including any derivative works, can be bundled, embedded,
+redistributed and/or sold with any software provided that any reserved
+names are not used by derivative works. The fonts and derivatives,
+however, cannot be released under any other type of license. The
+requirement for fonts to remain under this license does not apply to
+any document created using the fonts or their derivatives.
+
+DEFINITIONS
+"Font Software" refers to the set of files released by the Copyright
+Holder(s) under this license and clearly marked as such. This may
+include source files, build scripts and documentation.
+
+"Reserved Font Name" refers to any names specified as such after the
+copyright statement(s).
+
+"Original Version" refers to the collection of Font Software
+components as distributed by the Copyright Holder(s).
+
+"Modified Version" refers to any derivative made by adding to,
+deleting, or substituting -- in part or in whole -- any of the
+components of the Original Version, by changing formats or by porting
+the Font Software to a new environment.
+
+"Author" refers to any designer, engineer, programmer, technical
+writer or other person who contributed to the Font Software.
+
+PERMISSION & CONDITIONS
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of the Font Software, to use, study, copy, merge, embed,
+modify, redistribute, and sell modified and unmodified copies of the
+Font Software, subject to the following conditions:
+
+1) Neither the Font Software nor any of its individual components, in
+Original or Modified Versions, may be sold by itself.
+
+2) Original or Modified Versions of the Font Software may be bundled,
+redistributed and/or sold with any software, provided that each copy
+contains the above copyright notice and this license. These can be
+included either as stand-alone text files, human-readable headers or
+in the appropriate machine-readable metadata fields within text or
+binary files as long as those fields can be easily viewed by the user.
+
+3) No Modified Version of the Font Software may use the Reserved Font
+Name(s) unless explicit written permission is granted by the
+corresponding Copyright Holder. This restriction only applies to the
+primary font name as presented to the users.
+
+4) The name(s) of the Copyright Holder(s) or the Author(s) of the Font
+Software shall not be used to promote, endorse or advertise any
+Modified Version, except to acknowledge the contribution(s) of the
+Copyright Holder(s) and the Author(s) or with their explicit written
+permission.
+
+5) The Font Software, modified or unmodified, in part or in whole,
+must be distributed entirely under this license, and must not be
+distributed under any other license. The requirement for fonts to
+remain under this license does not apply to any document created using
+the Font Software.
+
+TERMINATION
+This license becomes null and void if any of the above conditions are
+not met.
+
+DISCLAIMER
+THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
+DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
+OTHER DEALINGS IN THE FONT SOFTWARE.
+
+*/
+  </style>
+</head>
+<body>
+  <header class="topbar"><div class="top-inner"><div class="brand"><span class="brand-mark" aria-hidden="true">笺</span>会话笺<span class="local">工作台</span></div><div class="top-actions"><span class="small muted">本地快照 · 只读</span><button id="refresh" class="button" type="button" title="重新读取当前已绑定的导出和分析文件"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6.1 7a7 7 0 0 1 11.5-1L20 9M4 15l2.4 3A7 7 0 0 0 18 17"/></svg>刷新页面</button></div></div></header>
+  <div class="workspace">
+    <div class="page-head"><div class="hero-copy"><div id="page-kicker" class="eyebrow">本机微信 · 会话整理</div><h1 id="page-title">聊天总览</h1><p id="page-description">把聊天里的重点，安放在一张笺上。</p></div><span class="hero-bird" aria-hidden="true"></span><div class="timebox"><div>数据截至 <strong id="snapshot-time">—</strong></div><div><span id="analysis-label">分析时间</span><strong id="analysis-time">待分析</strong></div><div>时间均为北京时间</div></div></div>
+    <div id="load-error" class="error" role="alert" hidden></div>
+    <div id="app" class="layout">
+      <aside class="sidebar" aria-label="会话选择"><div class="sidebar-head"><div class="sidebar-title"><span>会话目录</span><span id="source-count" class="pill">0</span></div><div class="search-wrap"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></svg><input id="contact-search" type="search" placeholder="查找联系人或群聊" aria-label="查找联系人或群聊" autocomplete="off"></div></div><nav id="contacts" class="contact-list" aria-label="联系人和群聊"></nav><div class="sidebar-foot">选择会话，聚焦相关总结与原文</div></aside>
+      <main class="main">
+        <section class="stats" aria-label="数据概况"><div class="stat"><div class="stat-label">可读消息</div><div id="stat-messages" class="stat-value">—</div><div class="stat-note">本次导出中的可读内容</div></div><div class="stat"><div class="stat-label">覆盖会话</div><div id="stat-sources" class="stat-value">—</div><div class="stat-note">当前查看范围</div></div><div class="stat"><div class="stat-label">待跟进事项</div><div id="stat-followups" class="stat-value">—</div><div id="stat-followups-note" class="stat-note">以已生成的分析为准</div></div><div class="stat"><div class="stat-label">未展开消息</div><div id="stat-unparsed" class="stat-value">—</div><div class="stat-note">非文本或未能解析的内容</div></div></section>
+        <div class="tabs-line"><div class="tabs" role="tablist" aria-label="查看方式"><button id="overview-tab" class="tab active" role="tab" aria-selected="true" aria-controls="overview-view" type="button">综合总览</button><button id="messages-tab" class="tab" role="tab" aria-selected="false" aria-controls="messages-view" tabindex="-1" type="button">聊天原文<span id="tab-count" class="count">0</span></button><button id="information-tab" class="tab" role="tab" aria-selected="false" aria-controls="information-view" tabindex="-1" type="button" hidden>群聊与公众号</button></div><span id="scope-name" class="scope-name">全部会话</span></div>
+        <section id="overview-view" role="tabpanel" aria-labelledby="overview-tab">
+          <article id="summary-card" class="summary"><div class="summary-top"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5Z"/></svg><span id="summary-heading">这次聊天的重点</span></h2><span id="summary-badge" class="pill">分析总结</span></div><p id="summary-text" class="summary-text"></p><p id="summary-note" class="summary-note"></p></article>
+          <div class="cards-grid"><section class="panel"><div class="panel-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5"/></svg>重点信息</h2><span id="highlight-count" class="muted">0 项</span></div><div id="highlights" class="panel-body"></div><button id="more-highlights" class="more-button" type="button" hidden></button></section><section class="panel"><div class="panel-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="m8 12 3 3 5-6"/></svg>待跟进</h2><span id="followup-count" class="muted">0 项</span></div><div id="followups" class="panel-body"></div><button id="more-followups" class="more-button" type="button" hidden></button><label class="complete-toggle"><input id="show-completed" type="checkbox">同时查看已完成、已取消的事项</label></section></div>
+        </section>
+        <section id="messages-view" role="tabpanel" aria-labelledby="messages-tab" hidden><div class="originals"><div class="original-toolbar"><div class="message-search"><div class="search-wrap"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></svg><input id="message-search" type="search" placeholder="搜索聊天内容、发送人或引用文字…" aria-label="检索聊天原文" autocomplete="off"></div></div><div class="date-row"><span>原文日期</span><input id="date-start" type="date" aria-label="原文开始日期"><span>至</span><input id="date-end" type="date" aria-label="原文结束日期"><button id="reset-filters" class="reset" type="button">清除检索条件</button></div></div><div class="result-line"><span id="results-count" aria-live="polite"></span><span>按消息时间排列</span></div><div id="date-error" class="error-inline" role="alert" hidden></div><div id="message-list" class="message-list"></div><div class="pagination"><span id="page-info"></span><div class="pager-buttons"><button id="prev-page" class="button" type="button">上一页</button><button id="next-page" class="button" type="button">下一页</button></div></div></div></section>
+        <section id="information-view" role="tabpanel" aria-labelledby="information-tab" hidden>
+          <div class="info-intro"><div><span class="eyebrow">信息整理</span><h2>通知留意，资料留存</h2><p>从群聊与公众号中，找出需要留意的事和值得回看的内容。</p><div id="information-status" class="info-status" role="status" aria-live="polite"></div></div><button id="organize-information" class="button" type="button">整理群聊与公众号</button></div>
+          <div class="info-scope"><p id="information-caption" class="info-caption"></p><details class="info-details"><summary>整理范围与来源</summary><div id="information-meta" class="info-meta"></div></details></div><p class="info-preference">调整一条信息的分类，下次整理会参考你的选择。</p>
+          <div class="cards-grid"><section class="panel"><div class="panel-head"><h2>通知事项</h2><span id="notice-count" class="muted">0 项</span></div><div id="information-notices"></div></section><section class="panel"><div class="panel-head"><h2>稍后回看</h2><span id="reference-count" class="muted">0 项</span></div><div id="information-references"></div></section></div>
+          <label class="info-controls"><input id="show-ignored-information" type="checkbox"> 查看已忽略的信息</label><section id="information-ignored-panel" class="panel info-ignored" hidden><div class="panel-head"><h2>已忽略</h2><span id="ignore-count" class="muted"></span></div><div id="information-ignored"></div></section>
+        </section>
+        <details class="coverage" aria-label="数据覆盖说明"><summary class="coverage-summary"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg><strong>阅读范围</strong><span id="coverage-range"></span></summary><p id="coverage-detail"></p><p id="coverage-warning" class="coverage-warning" hidden></p></details>
+        <footer class="footnote"><span>分析结论可通过证据回到聊天原文。未见确认，不等于没有完成。</span><span>刷新页面重新读取已绑定文件，不会自动提取最新微信。</span></footer>
+      </main>
+    </div>
+  </div>
+  <div id="evidence-drawer" class="drawer-wrap" hidden><button id="drawer-backdrop" class="backdrop" type="button" tabindex="-1" aria-label="关闭证据侧栏"></button><section class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" aria-describedby="drawer-subtitle"><div class="drawer-head"><div class="drawer-top"><h2 id="drawer-title">原文证据</h2><button id="drawer-close" class="close" type="button" aria-label="关闭证据侧栏"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><p id="drawer-subtitle" class="drawer-subtitle">高亮为引用原文，其余为同一会话前后文。</p></div><div id="drawer-content" class="drawer-content"></div></section></div>
+  <script id="dashboard-data" type="application/json">__WECHAT_DASHBOARD_DATA__</script>
+  <dialog id="local-image-dialog" class="local-image-dialog" aria-labelledby="local-image-title"><div class="local-image-head"><h2 id="local-image-title">会话图片</h2><button id="local-image-close" class="close" type="button" aria-label="关闭图片">×</button></div><p id="local-image-status" role="status"></p><img id="local-image-preview" alt="选定消息的本地图片" hidden></dialog>
+  <script>
+  'use strict';
+  (() => {
+    const $ = id => document.getElementById(id);
+    const make = (tag, cls, text) => { const node = document.createElement(tag); if (cls) node.className = cls; if (text !== undefined && text !== null) node.textContent = String(text); return node; };
+    const show = (id, yes) => { $(id).hidden = !yes; };
+    const text = (id, value) => { $(id).textContent = String(value ?? '—'); };
+    const number = value => Number.isFinite(Number(value)) ? Number(value).toLocaleString('zh-CN') : '—';
+    const timeFormat = new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'});
+    const timeParts = value => { const date=new Date(value); return value && !Number.isNaN(date.getTime()) ? Object.fromEntries(timeFormat.formatToParts(date).map(part=>[part.type,part.value])) : null; };
+    const stamp = value => { const p=timeParts(value); return p ? p.year+'-'+p.month+'-'+p.day+' '+p.hour+':'+p.minute+':'+p.second : '未记录'; };
+    const day = value => { const p=timeParts(value); return p ? p.year+'-'+p.month+'-'+p.day : ''; };
+    const isOpen = item => !['已完成','已取消'].includes(item.status);
+    const kinds = {text:'文字',reply:'引用回复',file:'文件标题',link:'链接卡片',share:'分享卡片',image:'图片'};
+    let payload;
+    try { payload = JSON.parse($('dashboard-data').textContent); if (!payload || !payload.export || !Array.isArray(payload.messages)) throw new Error('invalid'); }
+    catch (_) { text('load-error','看板数据未能载入。请通过项目的看板命令打开页面，并检查绑定的导出文件。'); show('load-error',true); show('app',false); $('refresh').addEventListener('click',() => location.reload()); return; }
+    const exported = payload.export;
+    const analysis = payload.analysis || null;
+    let information = payload.information || null;
+    let informationTimer = null;
+    const informationToken = information?.token || '';
+    const sources = Array.isArray(exported.sources) ? exported.sources : [];
+    const sourceMap = new Map(sources.map(s => [s.id,s]));
+    const messages = payload.messages.slice().sort((a,b) => Date.parse(a.time)-Date.parse(b.time) || String(a.uid).localeCompare(String(b.uid)));
+    const originalMessages = [...messages,...(payload.images?.messages || [])].sort((a,b)=>Date.parse(a.time)-Date.parse(b.time)||String(a.uid).localeCompare(String(b.uid)));
+    const messageMap = new Map(originalMessages.map(m => [m.uid,m]));
+    const conversationMessages = new Map();
+    for (const message of originalMessages) { if (!conversationMessages.has(message.source_id)) conversationMessages.set(message.source_id,[]); conversationMessages.get(message.source_id).push(message); }
+    const highlightItems = analysis && Array.isArray(analysis.highlights) ? analysis.highlights : [];
+    const followupItems = analysis && Array.isArray(analysis.followups) ? analysis.followups : [];
+    const state = {source:null,view:'overview',query:'',start:'',end:'',page:1,moreHighlights:false,moreFollowups:false,showCompleted:false};
+    const PAGE_SIZE = 35;
+    let restoreFocus = null;
+    const sourceName = id => sourceMap.get(id)?.name || (id ? '未命名会话' : '综合信息');
+    const scoped = items => state.source ? items.filter(item => item.source_id === state.source) : items;
+    const selectedMessages = () => state.source ? (conversationMessages.get(state.source) || []).filter(row=>row.kind!=='image') : messages;
+    const selectedOriginals = () => state.source ? conversationMessages.get(state.source) || [] : originalMessages;
+    let imageRequest=0;
+    const closeImage=()=>{imageRequest++;$('local-image-dialog').close();$('local-image-preview').removeAttribute('src');};
+    $('local-image-close').addEventListener('click',closeImage);
+    $('local-image-dialog').addEventListener('cancel',()=>{imageRequest++;$('local-image-preview').removeAttribute('src');});
+    async function openImage(message) {
+      const request=++imageRequest, source=state.source;
+      const dialog=$('local-image-dialog');if(!dialog.open) dialog.showModal();
+      show('local-image-preview',false);$('local-image-preview').removeAttribute('src');
+      text('local-image-title',sourceName(message.source_id)+' · '+stamp(message.time));
+      if(!payload.image_api) {text('local-image-status','图片在本地服务中查看；请从会话笺打开完整看板。');return;}
+      text('local-image-status','正在本地解码…');
+      try {
+        const response=await fetch('/api/image',{method:'POST',headers:{'Content-Type':'application/json','X-Image-Token':payload.image_api.token},body:JSON.stringify({uid:message.uid,version:payload.images.version})});
+        const image=await response.json();
+        if(request!==imageRequest || source!==state.source || !dialog.open) return;
+        if(!response.ok) throw new Error(image.error || '图片暂时无法打开');
+        if(image.uid!==message.uid || image.source_id!==message.source_id || image.version!==payload.images.version || !/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(image.data_url || '')) throw new Error('图片与当前消息不一致');
+        $('local-image-preview').src=image.data_url;show('local-image-preview',true);
+        text('local-image-status',image.width+' × '+image.height+' · '+image.note);
+      } catch(error) {if(request===imageRequest && source===state.source) text('local-image-status',error.message || '图片暂时无法打开，请重试。');}
+    }
+    function empty(container,title,body) { const node = make('div','empty'); node.append(make('strong','',title),make('span','',body)); container.append(node); }
+    function chooseSource(id) { if($('local-image-dialog').open) closeImage();state.source=id; state.page=1; state.moreHighlights=false; state.moreFollowups=false; renderContacts(); render(); }
+    function renderContacts() {
+      const container=$('contacts'); container.replaceChildren();
+      const query=$('contact-search').value.trim().toLocaleLowerCase();
+      function contact(id,name,meta,count) {
+        const button=make('button','contact'+(state.source===id?' active':'')); button.type='button'; button.setAttribute('aria-pressed',String(state.source===id)); button.title=name;
+        button.append(make('span','avatar',id ? Array.from(name)[0] || '人' : '全'));
+        const info=make('span','contact-info'); info.append(make('span','contact-name',name),make('span','contact-meta',meta)); info.firstChild.style.display='block'; info.lastChild.style.display='block'; button.append(info,make('span','contact-count',number(count)));
+        button.addEventListener('click',() => chooseSource(id)); container.append(button);
+      }
+      contact(null,'全部会话','综合总览',messages.length);
+      const matches=sources.filter(s => String(s.name || '').toLocaleLowerCase().includes(query) || String(s.id || '').toLocaleLowerCase().includes(query));
+      for(const source of matches) contact(source.id,source.name || '未命名会话',source.kind || '会话',(conversationMessages.get(source.id) || []).length);
+      if(!matches.length) empty(container,'没有找到会话','可尝试姓名、备注或会话编号。');
+    }
+    function setView(view,focus=false) {
+      state.view=view;
+      renderHeading();
+      for (const name of ['overview','messages','information']) { const active=name===view; const tab=$(name+'-tab'); tab.classList.toggle('active',active); tab.setAttribute('aria-selected',String(active)); tab.tabIndex=active?0:-1; show(name+'-view',active); if(active&&focus) tab.focus(); }
+      if(view==='messages') renderMessages();
+      if(view==='information') renderInformation();
+    }
+    function evidenceLink(item) {
+      const uids=Array.isArray(item.evidence_uids)?item.evidence_uids:[];
+      if(!uids.length) return make('span','','未附原文证据');
+      const button=make('button','evidence-button','查看依据 · '+uids.length); button.type='button'; button.addEventListener('click',() => openEvidence(uids,item.title || '原文证据')); return button;
+    }
+    function footer(item) { const node=make('div','item-footer'); const name=make('span','source-caption',sourceName(item.source_id)); name.title=sourceName(item.source_id); node.append(name,evidenceLink(item)); return node; }
+    function renderHighlights() {
+      const items=scoped(highlightItems); const container=$('highlights'); container.replaceChildren(); text('highlight-count',items.length+' 项');
+      if(!items.length) empty(container,analysis?'暂无重点信息':'等待分析','分析完成后，重点信息及原文依据会显示在这里。');
+      for(const item of (state.moreHighlights?items:items.slice(0,4))) {
+        const card=make('article','insight'); const top=make('div','item-top'); const kind=['fact','inference','uncertain'].includes(item.kind)?item.kind:'uncertain'; top.append(make('h3','',item.title || '重点信息'),make('span','kind-tag '+kind,{fact:'事实',inference:'推断',uncertain:'待确认'}[kind]));
+        card.append(top,make('p','item-text',item.text || ''),footer(item)); container.append(card);
+      }
+      show('more-highlights',items.length>4); text('more-highlights',state.moreHighlights?'收起重点信息':'查看其余 '+Math.max(0,items.length-4)+' 项');
+    }
+    function renderFollowups() {
+      const all=scoped(followupItems); const items=state.showCompleted?all:all.filter(isOpen); const container=$('followups'); container.replaceChildren(); text('followup-count',items.length+' 项');
+      if(!items.length) empty(container,analysis?'暂无待跟进事项':'等待梳理事项',analysis?(state.showCompleted?'当前范围没有记录事项。':'当前分析未列出待跟进事项，不代表所有事情已完成。'):'事项、责任人、期限和下一步将在分析后显示。');
+      for(const item of (state.moreFollowups?items:items.slice(0,4))) {
+        const card=make('article','followup'); const top=make('div','item-top'); top.append(make('h3','',item.title || '待跟进事项'),make('span','kind-tag '+(isOpen(item)?'wait':'status-complete'),item.status || '待确认')); const details=make('div','task-details'); details.append(make('span','','责任人：'+(item.owner || '未明确')),make('span','','期限：'+(item.due_text || '未明确'))); const next=make('p','task-next'); next.append(make('strong','','下一步  '),document.createTextNode(item.next_action || '待确认')); card.append(top,details,next,footer(item)); container.append(card);
+      }
+      show('more-followups',items.length>4); text('more-followups',state.moreFollowups?'收起事项':'查看其余 '+Math.max(0,items.length-4)+' 项');
+    }
+    function render() {
+      const current=selectedMessages(); const selected=state.source?sourceMap.get(state.source):null;
+      renderHeading(); text('stat-messages',number(current.length)); text('stat-sources',number(state.source?1:sources.length)); text('tab-count',number(selectedOriginals().length));
+      text('stat-followups',analysis?number(scoped(followupItems).filter(isOpen).length):'待分析'); $('stat-followups').classList.toggle('text',!analysis); text('stat-followups-note',analysis?'待跟进、待确认与进行中':'尚未生成事项分析');
+      const unread=selected?Math.max(0,Number(selected.total_messages || 0)-Number(selected.exported_messages || 0)):['excluded_nontext','excluded_unparsed','excluded_empty_or_decode_failed'].reduce((sum,key) => sum+Number(exported.counts?.[key] || 0),0);
+      text('stat-unparsed',number(unread));
+      $('summary-card').classList.toggle('pending',!analysis); text('summary-heading',analysis?(selected?'当前会话概要':'这次聊天的重点'):'原文已就绪，等待分析'); text('summary-badge',analysis?'分析总结':'待分析');
+      if(!analysis) { text('summary-text','这份快照尚未附分析结果。你可以先查看、检索聊天原文；附加分析文件后重新打开看板，即可查看总结与待跟进事项。'); text('summary-note','当前可检索 '+number(current.length)+' 条可读消息。页面不会根据消息数量自动推断业务结论。'); }
+      else if(selected) { const items=scoped(highlightItems); const primary=items.find(item=>item.kind==='fact') || items[0]; text('summary-text',primary?(primary.text || primary.title):'当前会话尚未记录重点信息，可以先查看聊天原文。'); text('summary-note',primary?'摘自该会话重点信息，完整内容见下方。':'综合摘要可在“全部会话”查看。'); }
+      else { text('summary-text',analysis.overview || '本次分析未填写综合摘要，请查看下方重点信息与待跟进事项。'); text('summary-note','事实、推断与待确认内容分别标注；点击“查看依据”可核对上下文。'); }
+      renderHighlights(); renderFollowups();
+      if(information) renderInformation();
+      text('coverage-detail','本次包含可读文字与 '+number(payload.images?.total || 0)+' 条图片记录；图片按需本地查看，未交给模型，仍计入未解析媒体。语音、视频和文件正文未展开。'+(exported.main_database_only?'数据来自已落盘主库，刚收到的消息可能暂未包含。':''));
+      const missing=exported.missing_message_shards; let warning=''; if(missing===null || missing===undefined) warning='这份快照未记录完整分库清单，覆盖完整性未知。'; else if(Array.isArray(missing)&&missing.length) warning='快照缺少 '+missing.length+' 个消息分库，本次结果可能不完整。'; text('coverage-warning',warning); show('coverage-warning',Boolean(warning));
+      if(state.view==='messages') renderMessages();
+    }
+    function renderHeading() {
+      const names={overview:'聊天总览',messages:'聊天原文',information:'群聊与公众号'};
+      const descriptions={overview:'把聊天里的重点，安放在一张笺上。',messages:'翻阅双方的对话，找回每个想法的来处。',information:'把重要的事留下，把值得回看的内容收好。'};
+      const selected=state.source?sourceMap.get(state.source):null;
+      const result=state.view==='information'?information?.result:null;
+      document.body.dataset.view=state.view;
+      text('page-title',selected?selected.name || '未命名会话':names[state.view]);
+      text('page-kicker',(selected?'当前会话':'本机微信')+' · '+names[state.view]);
+      text('page-description',descriptions[state.view]);
+      text('scope-name',selected?selected.name || '未命名会话':state.view==='information'?'群聊与公众号':'全部会话');
+      text('snapshot-time',stamp(result?.snapshot_at || exported.snapshot_at));
+      text('analysis-label',state.view==='information'?'整理时间':'分析时间');
+      text('analysis-time',state.view==='information'?(result?stamp(result.analyzed_at):'尚未整理'):(analysis?stamp(analysis.analyzed_at):'待分析'));
+    }
+    function appendMessageContent(container,message) {
+      if(message.kind==='image') {
+        const meta=make('div','message-meta');meta.append(make('span','sender',message.sender),make('span','',stamp(message.time)),make('span','','图片'));
+        const button=make('button','button image-message-button',message.has_reference?'▧ 查看图片':'图片缺少本地关联');button.type='button';button.disabled=!message.has_reference;button.addEventListener('click',()=>openImage(message));container.append(meta,button);return;
+      }
+      const meta=make('div','message-meta'); meta.append(make('span','sender',message.sender || '身份未解析')); if(message.is_self) meta.append(make('span','self-tag','我')); meta.append(make('span','',stamp(message.time)),make('span','',kinds[message.kind] || '消息')); container.append(meta,make('p','message-text',message.text || ''));
+      if(message.quoted_content) container.append(make('div','message-quote','引用：'+message.quoted_content));
+    }
+    function renderMessages() {
+      const invalid=Boolean(state.start&&state.end&&state.start>state.end); show('date-error',invalid); text('date-error',invalid?'开始日期晚于结束日期，请调整日期范围。':''); $('date-error').style.padding=invalid?'10px 19px':'0';
+      const query=state.query.trim().toLocaleLowerCase();
+      const filtered=invalid?[]:selectedOriginals().filter(m => (!state.start||day(m.time)>=state.start)&&(!state.end||day(m.time)<=state.end)&&(!query||[m.text,m.sender,m.quoted_content,sourceName(m.source_id)].some(value=>String(value || '').toLocaleLowerCase().includes(query))));
+      const pages=Math.max(1,Math.ceil(filtered.length/PAGE_SIZE)); state.page=Math.min(state.page,pages); text('results-count','找到 '+number(filtered.length)+' 条原文'+(state.source?' · 当前会话':' · 全部会话')); text('page-info',filtered.length?'第 '+state.page+' / '+pages+' 页':'暂无结果'); $('prev-page').disabled=state.page<=1; $('next-page').disabled=state.page>=pages;
+      const container=$('message-list'); container.replaceChildren(); if(!filtered.length) empty(container,invalid?'日期范围需要调整':'没有匹配的原文',invalid?'开始日期应早于或等于结束日期。':'可更换会话、关键词或日期范围。');
+      for(const message of filtered.slice((state.page-1)*PAGE_SIZE,state.page*PAGE_SIZE)) {
+        const card=make('article','message'); if(!state.source) { const label=make('div','small muted',sourceName(message.source_id)); label.style.marginBottom='6px'; card.append(label); } appendMessageContent(card,message); const bottom=make('div','message-bottom'); const uid=make('span','mono',message.uid); uid.title=message.uid; const button=make('button','evidence-button','查看上下文'); button.type='button'; button.addEventListener('click',()=>openEvidence([message.uid],'原文与上下文')); bottom.append(uid,button); card.append(bottom); container.append(card);
+      }
+    }
+    function openEvidence(uids,title,alternate=null) {
+      const lookup=alternate ? new Map(alternate.messages.map(m=>[m.uid,m])) : messageMap;
+      const conversations=alternate ? new Map() : conversationMessages;
+      if(alternate) for(const row of alternate.messages.slice().sort((a,b)=>Date.parse(a.time)-Date.parse(b.time)||a.uid.localeCompare(b.uid))) { if(!conversations.has(row.source_id)) conversations.set(row.source_id,[]); conversations.get(row.source_id).push(row); }
+      const evidenceName=id=>alternate?.sources.find(source=>source.id===id)?.name || sourceName(id);
+      const unique=[...new Set(uids)]; const known=unique.filter(uid=>lookup.has(uid)); const unknown=unique.length-known.length; const container=$('drawer-content'); container.replaceChildren(); text('drawer-title',title); text('drawer-subtitle','高亮为引用原文，并展示同一会话前后各两条消息；图片只供本地查看。');
+      if(unknown) container.append(make('p','drawer-note',unknown+' 条引用不在本次导出中，无法在此核对。请结合对应历史导出查看，不据此判定结论已被证实。'));
+      const bySource=new Map(); for(const uid of known) { const message=lookup.get(uid); if(!bySource.has(message.source_id)) bySource.set(message.source_id,new Set()); bySource.get(message.source_id).add(uid); }
+      for(const [sourceId,anchors] of bySource) {
+        const rows=conversations.get(sourceId)||[]; const indexes=new Set(); rows.forEach((m,i)=>{ if(anchors.has(m.uid)) for(let j=Math.max(0,i-2);j<=Math.min(rows.length-1,i+2);j++) indexes.add(j); }); const group=make('section','evidence-group'); group.append(make('h3','evidence-heading',evidenceName(sourceId))); let previous=-2;
+        for(const i of [...indexes].sort((a,b)=>a-b)) { if(previous>=0&&i>previous+1) group.append(make('p','small muted','… 中间还有其他消息 …')); const message=rows[i]; const anchor=anchors.has(message.uid); const card=make('article','context-message'+(anchor?' anchor':'')); if(anchor) card.append(make('div','context-label','引用证据')); appendMessageContent(card,message); card.append(make('p','mono',message.uid)); group.append(card); previous=i; }
+        container.append(group);
+      }
+      if(!known.length) empty(container,'当前快照中没有可显示的证据','需要使用包含相关消息的导出核对。');
+      restoreFocus=document.activeElement; show('evidence-drawer',true); document.body.style.overflow='hidden'; $('app').inert=true; $('drawer-close').focus();
+    }
+    function closeEvidence() { show('evidence-drawer',false); document.body.style.overflow=''; $('app').inert=false; if(restoreFocus&&restoreFocus.isConnected) restoreFocus.focus(); }
+    $('refresh').addEventListener('click',()=>location.reload()); $('contact-search').addEventListener('input',renderContacts);
+    $('overview-tab').addEventListener('click',()=>setView('overview')); $('messages-tab').addEventListener('click',()=>setView('messages')); $('information-tab').addEventListener('click',()=>setView('information'));
+    for(const name of ['overview','messages','information']) $(name+'-tab').addEventListener('keydown',event=>{ if(['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) { event.preventDefault(); const views=information?['overview','messages','information']:['overview','messages']; const at=views.indexOf(state.view); setView(event.key==='Home'?views[0]:event.key==='End'?views.at(-1):views[(at+(event.key==='ArrowRight'?1:views.length-1))%views.length],true); } });
+    $('more-highlights').addEventListener('click',()=>{state.moreHighlights=!state.moreHighlights;renderHighlights();}); $('more-followups').addEventListener('click',()=>{state.moreFollowups=!state.moreFollowups;renderFollowups();}); $('show-completed').addEventListener('change',event=>{state.showCompleted=event.target.checked;state.moreFollowups=false;renderFollowups();});
+    $('message-search').addEventListener('input',event=>{state.query=event.target.value;state.page=1;renderMessages();});
+    for(const [id,key] of [['date-start','start'],['date-end','end']]) $(id).addEventListener('change',event=>{state[key]=event.target.value;state.page=1;renderMessages();});
+    $('reset-filters').addEventListener('click',()=>{state.query='';state.start='';state.end='';state.page=1;$('message-search').value='';$('date-start').value='';$('date-end').value='';renderMessages();});
+    $('prev-page').addEventListener('click',()=>{state.page--;renderMessages();$('messages-view').scrollIntoView({block:'start'});}); $('next-page').addEventListener('click',()=>{state.page++;renderMessages();$('messages-view').scrollIntoView({block:'start'});});
+    $('drawer-close').addEventListener('click',closeEvidence); $('drawer-backdrop').addEventListener('click',closeEvidence);
+    document.addEventListener('keydown',event=>{ if($('evidence-drawer').hidden) return; if(event.key==='Escape') {event.preventDefault();closeEvidence();} else if(event.key==='Tab') {event.preventDefault();$('drawer-close').focus();} });
+    text('snapshot-time',stamp(exported.snapshot_at)); text('analysis-time',analysis?stamp(analysis.analyzed_at):'待分析'); text('source-count',sources.length+' 个'); text('coverage-range',day(exported.start)+' 至 '+stamp(exported.end));
+    for(const id of ['date-start','date-end']) { if(exported.start) $(id).min=day(exported.start); if(exported.end) $(id).max=day(exported.end); }
+    function renderInformation() {
+      if(!information) return;
+      const busy=information.status==='running'; const result=information.result;
+      $('organize-information').disabled=busy;
+      text('organize-information',busy?'正在整理…':information.status==='error'?'重试整理':'整理群聊与公众号');
+      text('information-status',information.message || '点击整理时，才会调用 '+(information.model||'当前模型')+'。');
+      $('information-status').classList.toggle('info-error',information.status==='error');
+      let meta=result ? '数据截至 '+stamp(result.snapshot_at)+' · '+day(result.start)+' 至 '+day(result.end)+' · '+number(result.stats.messages)+' 条可读消息 · '+number(result.stats.sources)+' 个群聊与公众号\n整理于 '+stamp(result.analyzed_at)+' · '+(result.model||'模型来源未记录')+' · 本轮请求 '+number(result.stats.requests)+' 次' : '尚未整理。'+(information.refreshes_wechat?'点击后读取近 7 天已落盘记录。':'将整理当前看板绑定的记录。');
+      const visibleSources=result?.sources || sources; const groups=visibleSources.filter(source=>source.kind==='群聊').length; const official=visibleSources.filter(source=>source.kind==='公众号').length;
+      meta+='\n'+(result?'本次整理':'当前导出')+'覆盖 '+groups+' 个群聊、'+official+' 个公众号。'; if(!official) meta+=' 当前导出未包含公众号记录。';
+      text('information-caption',(result?'已整理 '+number(result.stats.messages)+' 条消息':'当前导出')+' · '+groups+' 个群聊 · '+official+' 个公众号'+(!official?'（未包含公众号记录）':''));
+      if(result?.coverage) { meta+='\n图片、语音及文件正文未解析，共 '+number(result.coverage.unexpanded_messages)+' 条未展开消息。'; if(result.coverage.main_database_only) meta+=' 刚收到的消息可能暂未包含。'; const missing=result.coverage.missing_message_shards; if(missing===null||missing===undefined) meta+=' 分库覆盖情况未知。'; else if(missing.length) meta+=' 缺少 '+missing.length+' 个消息分库。'; }
+      $('information-meta').style.whiteSpace='pre-line'; text('information-meta',meta);
+      const items=scoped(result?.items||[]);
+      for(const [category,id,label] of [['notice','notices','notice'],['reference','references','reference'],['ignore','ignored','ignore']]) {
+        const rows=items.filter(item=>item.category===category); text(label+'-count',rows.length+' 项'); const container=$('information-'+id); container.replaceChildren();
+        if(!rows.length) empty(container,result?'暂无相关信息':'等待第一次整理',state.source?'当前会话没有这一类结果，可选择全部会话查看。':'整理结果会保存在本机，重新打开即可查看。');
+        for(const item of rows) {
+          const source=result.sources.find(source=>source.id===item.source_id); const card=make('article','info-card'); const top=make('div','info-card-top'); top.append(make('span','',(source?.kind||'会话')+' · '+(source?.name||'未命名会话')),make('span','',item.corrected?'你已归类':'')); card.append(top,make('h3','',item.title));
+          if(item.kind&&item.kind!=='fact') card.append(make('span','info-label',item.kind==='inference'?'推测，需结合原文判断':'尚待确认'));
+          if(item.item_type==='followups') { card.append(make('div','info-takeaway',item.status+' · '+item.due_text+' · '+item.owner),make('p','',item.next_action)); } else card.append(make('p','',item.text));
+          const bottom=make('div','info-card-bottom'); const evidence=make('button','evidence-button','回看原文'); evidence.type='button'; evidence.addEventListener('click',()=>openEvidence(item.evidence_uids,item.title,result));
+          const label=make('label','info-category','归类'); const select=make('select'); select.setAttribute('aria-label',item.title+'的分类'); for(const [value,name] of [['notice','通知事项'],['reference','稍后回看'],['ignore','忽略']]) { const option=make('option','',name); option.value=value; select.append(option); } select.value=item.category; select.disabled=busy;
+          select.addEventListener('change',async()=>{ select.disabled=true; try { useInformation(await informationRequest('/api/information/correct',{item_id:item.id,category:select.value,version:result.version})); } catch(error) { select.value=item.category; select.disabled=false; information.message=error.message; information.status='error'; renderInformation(); } });
+          label.append(select); bottom.append(evidence,label); card.append(bottom); container.append(card);
+        }
+      }
+      show('information-ignored-panel',$('show-ignored-information').checked);
+      renderHeading();
+    }
+    async function informationRequest(path,body) {
+      const options=body===undefined?{cache:'no-store'}:{method:'POST',headers:{'Content-Type':'application/json','X-Information-Token':informationToken},body:JSON.stringify(body)};
+      let response; try { response=await fetch(path,options); } catch(_) { throw new Error('本地看板连接中断，请重新打开后重试。'); }
+      const value=await response.json(); if(!response.ok||value.error) throw new Error(value.error||'操作未完成，请重试。'); return value;
+    }
+    function useInformation(value) { if(Number(value.revision)<Number(information.revision)) return; information={...information,...value}; renderInformation(); clearTimeout(informationTimer); if(information.status==='running') informationTimer=setTimeout(async()=>{ try { useInformation(await informationRequest('/api/information')); } catch(error) { information.status='error'; information.message=error.message; renderInformation(); } },1500); }
+    $('organize-information').addEventListener('click',async()=>{ $('organize-information').disabled=true; try { useInformation(await informationRequest('/api/information/run',{})); } catch(error) { information.status='error'; information.message=error.message; renderInformation(); } });
+    $('show-ignored-information').addEventListener('change',renderInformation);
+    show('information-tab',Boolean(information));
+    renderContacts(); render();
+    if(information) { useInformation(information); if(location.hash==='#information') setView('information'); }
+  })();
+  </script>
+</body>
+</html>
+

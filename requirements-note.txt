@@ -1,0 +1,2 @@
+-r requirements-workbench.txt
+pywebview==6.2.1
